@@ -1,6 +1,6 @@
 # Group 10 Project 2.1
 
-# Switched from Docker to Conda (Plan is outdated)
+# Virtual Enviroment Setup and Installation
 1. Install Miniconda: https://docs.conda.io/en/latest/miniconda.html
 2. Clone the repo:
    git clone https://github.com/VandingenenLars/ml-agents-project-2.1.git
