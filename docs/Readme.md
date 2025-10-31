@@ -19,12 +19,15 @@ This repository provides all components necessary for a reproducible workflow, i
 │ │ ├── configs # Training configuration files
 │ │ │ ├── ppo
 │ │ │ └── sac
-│ │ ├── TrainingOrchestrator.py # Main script to orchestrate training
+│ │ ├── training_orchestrator.py # Main script to orchestrate training
+│ │ ├── data_collector.py # Main script that handles data collection
 │ │ ├── logs # Logs generated during training
 │ │ └── results # Saved models and training results
 │ ├── utils
 │ │ ├── data_processor.py # Responsible for processing the raw data
 │ │ ├── feature_extractor.py # Transform processed data into feature sets
+| | ├── system_metrics_collector.py # Helper class that monitors system metrics
+| | ├── training_metrics_collector.py # Helper class that monitors training metrics
 │ │ └── training_helpers.py # Training utility functions
 │ └── environment.yml # Conda environment specification
 ```
