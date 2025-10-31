@@ -98,7 +98,7 @@ class TrainerController:
         """Resets the environment.
 
         Returns:
-            A Data structure corresponding to the initial reset state of the
+            A data structure corresponding to the initial reset state of the
             environment.
         """
         new_config = self.param_manager.get_current_samplers()
