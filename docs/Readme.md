@@ -48,3 +48,15 @@ conda activate mlagents
 conda list
 ```
 _If `mlagents' environment is present then setup was sucessful._
+
+## Usage Example
+1. **Activate** the environment
+```bash
+conda activate mlagents
+```
+
+2. **Run** `TrainingOrchestrator.py`
+> While in root directory:
+```bash
+python deliverables/training/TrainingOrchestrator.py --config deliverables/training/configs/{algo}/{config.yml}
+```
