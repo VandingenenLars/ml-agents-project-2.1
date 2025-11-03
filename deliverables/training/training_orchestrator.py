@@ -8,7 +8,7 @@ Usage:
     Example of how to use this module.
 
 Author:
-    Name
+    Denis
 Date:
     YYYY-MM-DD
 """
