@@ -1,3 +1,21 @@
+"""
+ppo_config.py
+
+Description:
+    class that provides a yaml config for training with the ppo training algorithm,
+    outputting to mock_config
+
+Usage:
+    initialize with ppoConfig = ppo_config("my_ppo_agent")
+    validate with ppoConfig.validate_settings()
+    load yaml config into mock_config.yaml with ppoConfig.load_config()
+
+Author:
+    Denis
+Date:
+    2025-09-31
+"""
+
 from deliverables.training.configs.yaml_config import yaml_config
 import os
 import yaml

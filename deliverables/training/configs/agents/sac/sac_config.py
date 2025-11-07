@@ -1,3 +1,21 @@
+"""
+sac_config.py
+
+Description:
+    class that provides a yaml config for training with the sac training algorithm,
+    outputting to mock_config
+
+Usage:
+    initialize with sacConfig = sac_config("my_sac_agent")
+    validate with sacConfig.validate_settings()
+    load yaml config into mock_config.yaml with sacConfig.load_config()
+
+Author:
+    Denis
+Date:
+    2025-09-31
+"""
+
 from deliverables.training.configs.yaml_config import yaml_config
 import os
 import yaml
