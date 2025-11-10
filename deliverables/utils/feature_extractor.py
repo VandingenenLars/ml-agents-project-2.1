@@ -1,14 +1,16 @@
 """
-module_name.py
+feature_extractor.py
 
 Description:
-    Describe what this module does.
+    The feature extractor module is responsible for taking in processed data and returning a feature matrix and a
+    feature summary that can be used for training machine learning predictive models.
 
 Usage:
     Example of how to use this module.
 
 Author:
-    Name
+    Andreas
 Date:
-    YYYY-MM-DD
+    2025-11-10
 """
+

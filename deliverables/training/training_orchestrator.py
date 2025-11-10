@@ -3,7 +3,7 @@ training_orchestrator.py
 
 Description:
    uses the generated yaml config and Ml-agent to run the corresponding training algorithm
-   ensuring everything initalized and running simultaneously
+   ensuring everything initialized and running simultaneously
 
 Usage:
     Example of how to use this module.
