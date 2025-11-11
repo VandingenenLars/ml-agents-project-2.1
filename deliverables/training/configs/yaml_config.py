@@ -19,10 +19,11 @@ from abc import ABC, abstractmethod
 
 class yaml_config(ABC):
    def __init__(self, game_type, algorithm):
+
        self.game_type = game_type
        self.algorithm = algorithm
 
-       # hyperperameters
+       # Default Hyperperameters
        self.learning_rate = 3e-4
        self.buffer_size = 50000
        self.num_epoch = 10
@@ -30,7 +31,7 @@ class yaml_config(ABC):
        self.num_layers = 2
        self.max_steps = 500000
 
-       # system metrics
+       # Default system metrics
        self.cpu_cores = 4
        self.total_ram_gb = 16.0
        self.target_mean_reward = 100
@@ -38,18 +39,31 @@ class yaml_config(ABC):
        self.cpu_utilization = 0.0
 
    @abstractmethod
-   def load_config(self):
+   def save_config(self):
        """"""
-       pass
 
    @abstractmethod
    def parse_hyperperameters(self):
        """"""
-       pass
+
    @abstractmethod
    def validate_settings(self):
        """"""
-       pass
+
+   @abstractmethod
+   def set_random_hyperparameters(self):
+       """"""
+
+   def get_yaml_config(self):
+       """"""
+       return self.to_yaml_dict()
+
+   def set_manual_hyperparameters(self,params: dict):
+        for key, value in params.items():
+            if hasattr(self, key):
+                setattr(self, key, value)
+            else:
+                print(f"Warning: Unknown hyperparameter '{key}' ignored.")
 
    def parse_network_settings(self) -> dict:
        """"""
