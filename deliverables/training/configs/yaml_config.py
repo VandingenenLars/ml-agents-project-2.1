@@ -58,12 +58,17 @@ class yaml_config(ABC):
        """"""
        return self.to_yaml_dict()
 
-   def set_manual_hyperparameters(self,params: dict):
-        for key, value in params.items():
-            if hasattr(self, key):
-                setattr(self, key, value)
-            else:
-                print(f"Warning: Unknown hyperparameter '{key}' ignored.")
+   def set_manual_hyperparameters(self, params):
+       """
+       Manually update hyperparameters from a dictionary.
+       """
+       for name in params:
+           # check if this attribute exists in the class
+           if name in self.__dict__:
+               # update its value
+               self.__dict__[name] = params[name]
+           else:
+               print("invalid parameter name")
 
    def parse_network_settings(self) -> dict:
        """"""
