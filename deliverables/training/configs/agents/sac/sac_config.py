@@ -19,9 +19,12 @@ Date:
 from deliverables.training.configs.yaml_config import yaml_config
 import os
 import yaml
+import random
 class sac_config(yaml_config):
+
     def __init__(self,game_type):
         super().__init__(game_type,"sac")
+        # Default SAC Specific hyperperameters
         self.batch_size = 256
         self.buffer_init_steps = 0
         self.tau = 0.005
@@ -32,7 +35,7 @@ class sac_config(yaml_config):
         self.learning_rate_schedule = "constant"
 
 
-    def load_config(self):
+    def save_config(self):
         """"""
         directory_path = os.path.dirname(__file__)
         file_path = os.path.join(directory_path,"mock_config.yaml")
@@ -41,6 +44,21 @@ class sac_config(yaml_config):
             yaml.dump(self.to_yaml_dict(),file,sort_keys=False)
 
         print("updated SAC mock_config.yaml")
+
+    def set_random_hyperparameters(self):
+        """"""
+        self.learning_rate = random.uniform(1e-5, 5e-4)
+        self.buffer_size = random.choice([500_000, 1_000_000, 2_000_000])
+        self.batch_size = random.choice([128, 256, 512])
+        self.num_epoch = random.choice([3, 5, 10])
+        self.num_units = random.choice([128, 256, 512])
+        self.num_layers = random.choice([2, 3])
+        self.max_steps = random.choice([500_000, 1_000_000, 2_000_000])
+        self.buffer_init_steps = random.randint(1_000, 10_000)
+        self.tau = random.uniform(0.001, 0.01)
+        self.steps_per_update = random.choice([5, 10, 20, 30])
+        self.int_entcoef = random.uniform(0.5, 1.5)
+        self.target_mean_reward = random.uniform(100, 300)
 
     def parse_hyperperameters(self):
         """"""
@@ -79,11 +97,11 @@ class sac_config(yaml_config):
         if self.learning_rate <= 0:
             raise ValueError("Learning rate must be positive")
         if self.tau <=0:
-            raise ValueError("tau must be positiv")
+            raise ValueError("tau must be positive")
 
 
 if __name__ == "__main__":
 
     sacConfig = sac_config("walker")
     sacConfig.validate_settings()
-    sacConfig.load_config()
+    sacConfig.save_config()

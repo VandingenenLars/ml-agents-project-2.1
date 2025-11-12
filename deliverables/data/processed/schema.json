@@ -1,0 +1,129 @@
+{
+  "fields": [
+    {
+      "name": "run_id",
+      "type": "string",
+      "description": "Unique identifier for the training run, timestamped",
+      "example": "run_2025-11-10_12-00-00"
+    },
+    {
+      "name": "game_type",
+      "type": "string",
+      "description": "Unity ML-Agents environment name",
+      "example": "3DBall"
+    },
+    {
+      "name": "algorithm",
+      "type": "string",
+      "description": "Reinforcement learning algorithm used",
+      "example": "PPO"
+    },
+    {
+      "name": "learning_rate",
+      "type": "float",
+      "description": "Step size for gradient updates",
+      "unit": null,
+      "example": 0.0003
+    },
+    {
+      "name": "batch_size",
+      "type": "integer",
+      "description": "Number of experiences per gradient update",
+      "unit": "samples",
+      "example": 1024
+    },
+    {
+      "name": "buffer_size",
+      "type": "integer",
+      "description": "Number of steps collected before gradient update",
+      "unit": "steps",
+      "example": 20480
+    },
+    {
+      "name": "num_epoch",
+      "type": "integer",
+      "description": "Number of passes through the experience buffer",
+      "example": 3
+    },
+    {
+      "name": "num_units",
+      "type": "integer",
+      "description": "Number of neurons per hidden layer",
+      "example": 128
+    },
+    {
+      "name": "num_layers",
+      "type": "integer",
+      "description": "Number of hidden layers in the neural network",
+      "example": 2
+    },
+    {
+      "name": "max_steps",
+      "type": "integer",
+      "description": "Maximum number of training environment steps",
+      "unit": "steps",
+      "example": 50000
+    },
+    {
+      "name": "cpu_cores",
+      "type": "integer",
+      "description": "Number of logical CPU cores available",
+      "example": 8
+    },
+    {
+      "name": "total_ram_gb",
+      "type": "float",
+      "description": "Total system RAM",
+      "unit": "GB",
+      "example": 32
+    },
+    {
+      "name": "avg_cpu_utilization",
+      "type": "float",
+      "description": "Average CPU usage during training",
+      "unit": "%",
+      "example": 48.2
+    },
+    {
+      "name": "avg_gpu_utilization",
+      "type": "float",
+      "description": "Average GPU usage during training",
+      "unit": "%",
+      "example": 46.7
+    },
+    {
+      "name": "avg_ram_usage_mb",
+      "type": "float",
+      "description": "Average RAM usage during training",
+      "unit": "MB",
+      "example": 8450.5
+    },
+    {
+      "name": "peak_ram_usage_mb",
+      "type": "float",
+      "description": "Maximum RAM usage observed during training",
+      "unit": "MB",
+      "example": 8592.4
+    },
+    {
+      "name": "target_mean_reward",
+      "type": "float",
+      "description": "Target reward set for the agent",
+      "example": 100
+    },
+    {
+      "name": "iterations_to_target",
+      "type": "integer",
+      "description": "Iterations taken to reach target reward",
+      "unit": "steps",
+      "example": 6000
+    },
+    {
+      "name": "training_time_to_target_sec",
+      "type": "float",
+      "description": "Elapsed time to reach target reward in seconds",
+      "unit": "seconds",
+      "example": 15.2
+    }
+  ]
+}

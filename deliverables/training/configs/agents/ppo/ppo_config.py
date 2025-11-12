@@ -19,16 +19,18 @@ Date:
 from deliverables.training.configs.yaml_config import yaml_config
 import os
 import yaml
+import random
 class ppo_config(yaml_config):
     def __init__(self,game_type):
         super().__init__(game_type,"ppo")
+        # Default PPO Specifc Hyperperameters
         self.batch_size = 2048
         self.beta = 0.005
         self.epsilon = 0.02
         self.lambd = 0.95
         self.learning_rate_schedule = "linear"
 
-    def load_config(self):
+    def save_config(self):
         """"""
         directory_path = os.path.dirname(__file__)
         file_path = os.path.join(directory_path,"mock_config.yaml")
@@ -37,6 +39,19 @@ class ppo_config(yaml_config):
             yaml.dump(self.to_yaml_dict(),file,sort_keys=False)
 
         print("updated PPO mock_config.yaml")
+
+    def set_random_hyperparameters(self):
+        self.learning_rate = random.uniform(1e-5, 5e-4)
+        self.buffer_size = random.choice([2048, 4096, 8192, 16384])
+        self.batch_size = random.choice([64, 128, 256, 512])
+        self.num_epoch = random.choice(range(3, 11))
+        self.num_units = random.choice([64, 128, 256])
+        self.num_layers = random.choice([2, 3])
+        self.max_steps = int(random.uniform(1e5, 2e6))
+        self.beta = random.uniform(1e-4, 1e-2)
+        self.epsilon = random.uniform(0.1, 0.3)
+        self.lambd = random.uniform(0.9, 0.99)
+        self.target_mean_reward = int(random.uniform(50, 500))
 
     def parse_hyperperameters(self):
         """"""
@@ -81,4 +96,4 @@ if __name__ == "__main__":
 
     ppoConfig = ppo_config("walker")
     ppoConfig.validate_settings()
-    ppoConfig.load_config()
+    ppoConfig.save_config()
