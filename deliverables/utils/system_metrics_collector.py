@@ -36,6 +36,19 @@ class system_metrics_collector:
     _GPUtil = None
     _amdsmi = None
 
+
+def collect_cpu_cores(self) -> int:
+    cores = self._psutil.cpu_count(logical=False)
+    if not cores:
+        cores = self._psutil.cpu_count(logical=True) or 0
+    self.cpu_cores = int(cores)
+    return self.cpu_cores
+
+def collect_ram_total_gb(self) -> float:
+    vm = self._psutil.virtual_memory()
+    self.ram_total_gb = round(vm.total / (1024 * 1024 * 1024), 2)
+    return self.ram_total_gb
+
     def __init__(self, run_dir: Optional[str] = None, interval: float = 5.0, file_name: str = "system_metrics.jason") -> None:
         self._lazy_imports()
         self.interval = max(0.1, float(interval))
