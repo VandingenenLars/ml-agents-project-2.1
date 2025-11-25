@@ -58,47 +58,49 @@ class training_orchestrator:
 
 
     def monitor_training(self):
-        """"""
+        """run system and training metrics collector"""
+
         pass
 
     def stop_training(self):
         """"""
         pass
 
+    def begin_training_orchestrator(self):
+        game_type = input(print("Enter game type: "))
+        alg_type = input(print("Enter algorithm type: "))
+        perameter_mode = input(print("Random hyperparameter mode?: [y/n]"))
 
-if __name__ == "__main__":
-    game_type = input(print("Enter game type: "))
-    alg_type = input(print("Enter algorithm type: "))
-    perameter_mode = input(print("Random hyperparameter mode?: [y/n]"))
+        if alg_type == "ppo":
+            config = ppo_config(game_type)
+        elif alg_type == "sac":
+            config = sac_config(game_type)
+        else:
+            print("Invalid algorithm type")
 
-    if alg_type == "ppo":
-        config = ppo_config(game_type)
-    elif alg_type == "sac":
-        config = sac_config(game_type)
-    else:
-        print("Invalid algorithm type")
+        if perameter_mode == "y":
+            print("Random hyperparameter entry mode selected.")
+            config.set_random_hyperparameters()
 
-    if perameter_mode == "y":
-        print("Random hyperparameter entry mode selected.")
-        config.set_random_hyperparameters()
+        elif perameter_mode == "n":
 
-    elif perameter_mode == "n":
+            print("Manual hyperparameter entry mode selected.")
+            manual_params = {}
 
-        print("Manual hyperparameter entry mode selected.")
-        manual_params = {}
+            while True:
 
-        while True:
+                key = input("Enter a hyperparameter name (or type 'done' to finish): ")
+                if key.lower() == "done":
+                    break
 
-            key = input("Enter a hyperparameter name (or type 'done' to finish): ")
-            if key.lower() == "done":
-                break
+                # get the value for that hyperparameter
+                value = input(f"Enter a value for {key}: ")
+                manual_params[key] = value
 
-            # get the value for that hyperparameter
-            value = input(f"Enter a value for {key}: ")
-            manual_params[key] = value
+            # apply all entered values to the config
+            config.set_manual_hyperparameters(manual_params)
 
-        # apply all entered values to the config
-        config.set_manual_hyperparameters(manual_params)
-
-    config.validate_settings()
-    orchestator = training_orchestrator(config)
+        config.validate_settings()
+        orchestrator = training_orchestrator(config)
+        orchestrator.start_training()
+        return orchestrator
