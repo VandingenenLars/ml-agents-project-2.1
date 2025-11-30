@@ -2,10 +2,11 @@
 data_processor.py
 
 Description:
-    Describe what this module does.
+    This code takes and loads 3 json files from a folder, each folder being a new run and procceses it. Than the data is worked into one single csv line.
+    This is done with multiple folder runs so that at the end there is 1 csv file with the data from all the runs, being ready to be worked on.
 
 Usage:
-    Example of how to use this module.
+    In order for this code to work there is needed to be at least one folder run.
 
 Author:
     Jianu Mihnea-Alexandru
@@ -88,7 +89,7 @@ def main():
             }
             writer.writerow(row)
 
-    print(f"✅ CSV created at {output_file}")
+    print(f"CSV created at {output_file}")
 
 if __name__ == "__main__":
     main()
