@@ -1,0 +1,23 @@
+behaviors:
+  MyBehavior:
+    trainer_type: ppo
+    hyperparameters:
+      batch_size: 128
+      buffer_size: 4096
+      learning_rate: 0.00025962318824730566
+      beta: 0.00035991006361602024
+      epsilon: 0.21052768743844452
+      lambd: 0.9259948634778479
+      num_epoch: 10
+    network_settings:
+      normalize: true
+      hidden_units: 64
+      num_layers: 2
+      vis_encode_type: simple
+    reward_signals:
+      extrinsic:
+        gamma: 0.995
+        strength: 1.0
+    keep_checkpoints: 5
+    time_horizon: 1000
+    summary_freq: 30000

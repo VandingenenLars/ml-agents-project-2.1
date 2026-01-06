@@ -1,106 +1,89 @@
-"""
-training_orchestrator.py
-
-Description:
-   uses the generated yaml config and Ml-agent to run the corresponding training algorithm
-<<<<<<< HEAD
-   ensuring everything initialised and running simultaneously
-=======
-   ensuring everything initialized and running simultaneously
->>>>>>> origin/develop
-
-Usage:
-    Example of how to use this module.
-
-Author:
-    Denis
-Date:
-    2025-11-06
-"""
-
+import os
 import time
-import subprocess
+import json
+
+from deliverables.training.data_collector import data_collector
 from deliverables.training.configs.agents.ppo.ppo_config import ppo_config
-from deliverables.training.configs.agents.sac.sac_config import sac_config
 
 class training_orchestrator:
-    def __init__(self,config,run_id=None):
 
-        self.run_id = run_id or self.algorithm + "_" + self.game_type + "_" + str(int(time.time()))
-        self.config = config
-        self.yaml_path = ""
+    # Flow:
+    # 1. Create YAML config file
+    # 2. run training 
+    # 3. use datcollector class 
 
-    def get_yaml_dict(self):
-        """"""
-        return self.config.get_yaml_config()
+    def __init__(
+        self,
+        unity_env_path: str,
+        behavior_name: str = "3DBall",
+        target_reward: float = 1.0,
+        system_metrics_interval: float = 2.0,
+        no_graphics: bool = True
+    ):
+        self.unity_env_path = unity_env_path
+        self.behavior_name = behavior_name
+        self.target_reward = target_reward
+        self.system_metrics_interval = system_metrics_interval
+        self.no_graphics = no_graphics
 
-    def start_training(self, env_file=None, force=False):
-        """"""
-        self.config.save_config()
-        self.yaml_path = "mock_config.yaml"  # or wherever your save_config puts it
+        self.yaml_path = os.path.join(os.getcwd(), "dummy_mlagents_config.yaml")
+        self.base_data_path = os.path.join(os.getcwd(), "deliverables/data/raw")
 
-        # call ML-Agents to run training
-        self.call_ml_agent(self.yaml_path, env_file, force)
+    def create_yaml(self):
+        ppo_cfg = ppo_config(self.behavior_name)
+        ppo_cfg.set_random_hyperparameters()
+        ppo_cfg.validate_settings()
+        ppo_cfg.save_config(self.yaml_path)
 
-
-    def call_ml_agent(self,config_file, env_file=None, force=False):
-        """"""
-        command = [
-            "mlagents-learn",
-            str(config_file),
-            "--run-id", self.run_id
-        ]
-
-        if env_file:
-            command.extend(["--env", str(env_file)])
-        if force:
-            command.append("--force")
+        print(f"[training_orchestrator] YAML created: {self.yaml_path}")
+        return ppo_cfg
 
 
-    def monitor_training(self):
-        """run system and training metrics collector"""
+    def run_training(self):
+        cfg = self.create_yaml()
+        run_id = f"run_{int(time.time())}"
 
-        pass
+        # Create single run folder (no subfolders)
+        run_path = os.path.join(self.base_data_path, run_id)
+        os.makedirs(run_path, exist_ok=True)
 
-    def stop_training(self):
-        """"""
-        pass
+        collector = data_collector(
+            config=cfg,
+            run_id=run_id,
+            target_reward=self.target_reward,
+            system_metrics_interval=self.system_metrics_interval,
+            no_graphics=self.no_graphics,
+            env_file=self.unity_env_path,
+            run_path=run_path
+        )
 
-    def begin_training_orchestrator(self):
-        game_type = input(print("Enter game type: "))
-        alg_type = input(print("Enter algorithm type: "))
-        perameter_mode = input(print("Random hyperparameter mode?: [y/n]"))
+        print(f"Starting training with run ID = {run_id}")
+        print(f"Output directory: {run_path}")
 
-        if alg_type == "ppo":
-            config = ppo_config(game_type)
-        elif alg_type == "sac":
-            config = sac_config(game_type)
-        else:
-            print("Invalid algorithm type")
+        results = collector.run_complete_experiment(
+            config_file=self.yaml_path,
+            env_file=self.unity_env_path,
+            force=True
+        )
 
-        if perameter_mode == "y":
-            print("Random hyperparameter entry mode selected.")
-            config.set_random_hyperparameters()
+        print("\n--- Training Summary ---")
+        print(json.dumps(results, indent=4))
 
-        elif perameter_mode == "n":
+        if os.path.exists(self.yaml_path):
+            os.remove(self.yaml_path)
 
-            print("Manual hyperparameter entry mode selected.")
-            manual_params = {}
+        return results
 
-            while True:
 
-                key = input("Enter a hyperparameter name (or type 'done' to finish): ")
-                if key.lower() == "done":
-                    break
+if __name__ == "__main__":
+    UNITY_APP = "/Users/larsvandingenen/MLagents/ml-agents-project-2.1/Builds/Mygame.app"
 
-                # get the value for that hyperparameter
-                value = input(f"Enter a value for {key}: ")
-                manual_params[key] = value
+    orch = training_orchestrator(
+        unity_env_path=UNITY_APP,
+        behavior_name="3DBall",
+        target_reward=1.0,
+        system_metrics_interval=2.0,
+        no_graphics=True
+    )
 
-            # apply all entered values to the config
-            config.set_manual_hyperparameters(manual_params)
-
-        config.validate_settings()
-        orchestrator = training_orchestrator(config)
-        orchestrator.start_training()
-        return orchestrator
+    orch.run_training()

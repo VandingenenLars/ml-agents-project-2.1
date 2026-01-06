@@ -1,44 +1,18 @@
-"""
-ppo_config.py
-
-Description:
-    class that provides a yaml config for training with the ppo training algorithm,
-    outputting to mock_config
-
-Usage:
-    initialize with ppoConfig = ppo_config("my_ppo_agent")
-    validate with ppoConfig.validate_settings()
-    load yaml config into mock_config.yaml with ppoConfig.load_config()
-
-Author:
-    Denis
-Date:
-    2025-09-31
-"""
-
-from deliverables.training.configs.yaml_config import yaml_config
 import os
 import yaml
 import random
+from deliverables.training.configs.yaml_config import yaml_config
+
 class ppo_config(yaml_config):
-    def __init__(self,game_type):
-        super().__init__(game_type,"ppo")
-        # Default PPO Specifc Hyperperameters
-        self.batch_size = 2048
+    def __init__(self, game_type):
+        super().__init__(game_type, "ppo")
+        self.batch_size = 64
+        self.buffer_size = 2048
+        self.learning_rate = 3e-4
         self.beta = 0.005
         self.epsilon = 0.02
         self.lambd = 0.95
-        self.learning_rate_schedule = "linear"
-
-    def save_config(self):
-        """"""
-        directory_path = os.path.dirname(__file__)
-        file_path = os.path.join(directory_path,"mock_config.yaml")
-
-        with open(file_path,"w") as file:
-            yaml.dump(self.to_yaml_dict(),file,sort_keys=False)
-
-        print("updated PPO mock_config.yaml")
+        self.num_epoch = 3
 
     def set_random_hyperparameters(self):
         self.learning_rate = random.uniform(1e-5, 5e-4)
@@ -54,27 +28,33 @@ class ppo_config(yaml_config):
         self.target_mean_reward = int(random.uniform(50, 500))
 
     def parse_hyperperameters(self):
-        """"""
-        return{
-            "learning_rate": self.learning_rate,
-            "buffer_size": self.buffer_size,
+        return {
             "batch_size": self.batch_size,
-            "num_epoch": self.num_epoch,
-            "num_units": self.num_units,
-            "num_layers": self.num_layers,
-            "max_steps": self.max_steps,
+            "buffer_size": self.buffer_size,
+            "learning_rate": self.learning_rate,
             "beta": self.beta,
             "epsilon": self.epsilon,
             "lambd": self.lambd,
-            "learning_rate_schedule": self.learning_rate_schedule,
-            "cpu_cores": self.cpu_cores,
-            "total_ram_gb": self.total_ram_gb,
-            "target_mean_reward": self.target_mean_reward,
-            "gpu_utilization": self.gpu_utilization,
-            "cpu_utilization": self.cpu_utilization
+            "num_epoch": self.num_epoch,
         }
+
+    def save_config(self, file_path: str = None):
+        import os
+        import yaml
+
+        if file_path is None or file_path.strip() == "":
+            directory_path = os.path.dirname(__file__)
+            file_path = os.path.join(directory_path, "mock_config.yaml")
+        
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+
+        with open(file_path, "w") as file:
+            yaml.dump(self.to_yaml_dict(), file, sort_keys=False)
+
+        print(f"Updated PPO YAML config at {file_path}")
+
+
     def validate_settings(self):
-        """"""
         if self.num_units <= 0:
             raise ValueError("Number of units must be positive")
         if self.num_layers <= 0:
@@ -89,11 +69,11 @@ class ppo_config(yaml_config):
             raise ValueError("beta must be positive")
         if self.lambd <= 0:
             raise ValueError("lambd must be positive")
-        if self.epsilon <=0:
+        if self.epsilon <= 0:
             raise ValueError("epsilon must be positive")
 
-if __name__ == "__main__":
 
+if __name__ == "__main__":
     ppoConfig = ppo_config("walker")
     ppoConfig.validate_settings()
     ppoConfig.save_config()

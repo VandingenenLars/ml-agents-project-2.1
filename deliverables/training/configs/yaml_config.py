@@ -79,7 +79,7 @@ class yaml_config(ABC):
            "vis_encode_type": "simple"
        }
 
-   def parse_reward_settings(self) -> dict:
+   def parse_reward_signals(self) -> dict:
        """"""
        return {
            "extrinsic": {
@@ -88,21 +88,19 @@ class yaml_config(ABC):
            }
        }
    def to_yaml_dict(self) -> dict:
-       """"""
-       return {
-           "behaviors": {
-               self.game_type: {
-                   "trainer_type": self.algorithm,
-                   "hyperparameters": self.parse_hyperperameters(),
-                   "network_settings": self.parse_network_settings(),
-                   "reward_settings": self.parse_reward_settings(),
-                   "keep_checkpoints": 5,
-                   "max_steps": self.max_steps,
-                   "time_horizon": 1000,
-                   "summary_freq": 30000
-               }
-           }
-       }
+        return {
+            "behaviors": {
+                self.game_type: {
+                    "trainer_type": self.algorithm,
+                    "hyperparameters": self.parse_hyperperameters(),
+                    "network_settings": self.parse_network_settings(),
+                    "reward_signals": self.parse_reward_signals(),
+                    "keep_checkpoints": 5,
+                    "time_horizon": 1000,
+                    "summary_freq": 30000
+                }
+            }
+        }
 
 
 
