@@ -1,3 +1,4 @@
+from __future__ import annotations
 """
 before running: install psutil pynvml GPUtil amdsmi
 
@@ -16,8 +17,6 @@ GPU support:
 records cpu, gpu and ram usage percentage
 
 """
-
-from __future__ import annotations
 import json
 import os
 import signal
@@ -26,40 +25,38 @@ import time
 import shutil
 import subprocess
 import platform
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Any, Dict, List, Optional
+from pathlib import Path
 
-
-class system_metrics_collector:
+class SystemMetricsCollector:
     _psutil = None
     _pynvml = None
     _GPUtil = None
     _amdsmi = None
 
-
-def collect_cpu_cores(self) -> int:
-    cores = self._psutil.cpu_count(logical=False)
-    if not cores:
-        cores = self._psutil.cpu_count(logical=True) or 0
-    self.cpu_cores = int(cores)
-    return self.cpu_cores
-
-def collect_ram_total_gb(self) -> float:
-    vm = self._psutil.virtual_memory()
-    self.ram_total_gb = round(vm.total / (1024 * 1024 * 1024), 2)
-    return self.ram_total_gb
-
-    def __init__(self, run_dir: Optional[str] = None, interval: float = 5.0, file_name: str = "system_metrics.jason") -> None:
+    def __init__(
+        self,
+        run_dir: Optional[str] = None,
+        interval: float = 5.0,
+        file_name: str = "system_metrics.json",
+    ) -> None:
         self._lazy_imports()
         self.interval = max(0.1, float(interval))
-        self.run_dir = run_dir or self._default_run_dir()
-        self.file_path = os.path.join(self.run_dir, file_name)
+
+        # Use provided directory or default
+        self.run_dir = Path(run_dir) if run_dir else Path("data/raw") / f"run_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
+        self.run_dir.mkdir(parents=True, exist_ok=True)
+
+        self.file_path = self.run_dir / file_name
         self._stop = False
-        os.makedirs(self.run_dir, exist_ok=True)
+
         try:
             self._psutil.cpu_percent(interval=None)
         except Exception:
             pass
+
+        # Handle termination signals
         signal.signal(signal.SIGINT, self._handle_sig)
         signal.signal(signal.SIGTERM, self._handle_sig)
 
@@ -94,8 +91,45 @@ def collect_ram_total_gb(self) -> float:
                 self._amdsmi = None
 
     def _iso_now(self) -> str:
-        from datetime import datetime
         return datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+
+    def sample_once(self) -> Dict[str, Any]:
+        vm = self._psutil.virtual_memory()
+        cpu_pct = self._psutil.cpu_percent(interval=None)
+        gpus = self._collect_gpus()
+        gpu_utils = [g.get("utilization_percent") for g in gpus if isinstance(g.get("utilization_percent"), (int, float))]
+        gpu_util = int(round(max(gpu_utils))) if gpu_utils else 0
+
+        return {
+            "timestamp": self._iso_now(),
+            "cpu_utilization": round(float(cpu_pct), 1),
+            "ram_used_mb": round(vm.used / (1024 * 1024), 1),
+            "ram_available_mb": round(vm.available / (1024 * 1024), 1),
+            "gpu_utilization": gpu_util,
+        }
+
+    def run(self, verbose: bool = True) -> None:
+        print(f"Writing metrics to {self.file_path}")
+        written = 0
+        with open(self.file_path, "a", encoding="utf-8") as f:
+            while not self._stop:
+                rec = self.sample_once()
+                f.write(json.dumps(rec) + "\n")
+                f.flush()
+                written += 1
+                if verbose:
+                    print(f"[{rec['timestamp']}] CPU {rec['cpu_utilization']:.1f}% | "
+                          f"RAM used {rec['ram_used_mb']:.1f} MB avail {rec['ram_available_mb']:.1f} MB | "
+                          f"GPU {rec['gpu_utilization']}%")
+                time.sleep(self.interval)
+        print(f"Stopped. Samples written: {written}")
+
+    def stop(self):
+        self._stop = True
+
+    def _handle_sig(self, signum, frame):
+        print("Received termination signal, stopping...", file=sys.stderr)
+        self._stop = True
 
     def _collect_nvidia_nvml(self) -> List[Dict[str, Any]]:
         if self._pynvml is None:
@@ -413,38 +447,4 @@ def collect_ram_total_gb(self) -> float:
         local = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
         return os.path.join("data", "raw", f"run_{local}")
 
-    def _handle_sig(self, signum, frame):
-        print("\nReceived signal, stopping...", file=sys.stderr)
-        self._stop = True
-
-    def sample_once(self) -> Dict[str, Any]:
-        vm = self._psutil.virtual_memory()
-        cpu_pct = self._psutil.cpu_percent(interval=None)
-        gpus = self._collect_gpus()
-        gpu_utils = [g.get("utilization_percent") for g in gpus if isinstance(g.get("utilization_percent"), (int, float))]
-        gpu_util = int(round(max(gpu_utils))) if gpu_utils else 0
-        record = {
-            "timestamp": self._iso_now(),
-            "cpu_utilization": round(float(cpu_pct), 1),
-            "ram_used_mb": round(vm.used / (1024 * 1024), 1),
-            "ram_available_mb": round(vm.available / (1024 * 1024), 1),
-            "gpu_utilization": gpu_util,
-        }
-        return record
-
-    def run(self, verbose: bool = True) -> None:
-        print(f"Writing to {self.file_path}")
-        written = 0
-        with open(self.file_path, "a", encoding="utf-8") as f:
-            while not self._stop:
-                rec = self.sample_once()
-                f.write(json.dumps(rec) + "\n")
-                f.flush()
-                written += 1
-                if verbose:
-                    print(f"[{rec['timestamp']}] CPU {rec['cpu_utilization']:.1f}% | RAM used {rec['ram_used_mb']:.1f} MB avail {rec['ram_available_mb']:.1f} MB | GPU {rec['gpu_utilization']}%")
-                time.sleep(self.interval)
-        print(f"Stopped. Samples written: {written}")
-
-    def stop(self):
-        self._stop = True
+   
