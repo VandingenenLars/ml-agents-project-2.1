@@ -34,7 +34,7 @@ PROCESSED_PATH = DATA_DIR / "processed" / "mock_processed_data.csv"
 FEATURES_DIR = DATA_DIR / "features"
 
 TEST_SIZE = 0.2
-RANDOM_STATE = 42
+RANDOM_STATE = 34
 
 
 def load_data(filepath: str) -> pd.DataFrame:
