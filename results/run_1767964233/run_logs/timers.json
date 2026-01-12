@@ -1,0 +1,42 @@
+{
+    "name": "root",
+    "metadata": {
+        "timer_format_version": "0.1.0",
+        "start_time_seconds": "1767964236",
+        "python_version": "3.10.11 (tags/v3.10.11:7d4cc5a, Apr  5 2023, 00:38:17) [MSC v.1929 64 bit (AMD64)]",
+        "command_line_arguments": "D:\\ml-agents-project-2.1\\venv\\Scripts\\mlagents-learn D:\\ml-agents-project-2.1\\dummy_mlagents_config.yaml --run-id=run_1767964233 --base-port=6006 --train --torch-device=cuda --env=D:\\ml-agents-project-2.1\\Builds\\3DBall\\UnityEnvironment.exe --force --no-graphics",
+        "mlagents_version": "1.1.0",
+        "mlagents_envs_version": "1.1.0",
+        "communication_protocol_version": "1.5.0",
+        "pytorch_version": "2.5.1+cu121",
+        "numpy_version": "1.23.5",
+        "end_time_seconds": "1767964241"
+    },
+    "total": 4.906070400000317,
+    "count": 1,
+    "self": 0.3530957000039052,
+    "children": {
+        "run_training.setup": {
+            "total": 0.11865039999975124,
+            "count": 1,
+            "self": 0.11865039999975124
+        },
+        "TrainerController.start_learning": {
+            "total": 4.434324299996661,
+            "count": 1,
+            "self": 0.00014869999722577631,
+            "children": {
+                "TrainerController._reset_env": {
+                    "total": 4.434163699996134,
+                    "count": 1,
+                    "self": 4.434163699996134
+                },
+                "TrainerController._save_models": {
+                    "total": 1.1900003300979733e-05,
+                    "count": 1,
+                    "self": 1.1900003300979733e-05
+                }
+            }
+        }
+    }
+}
