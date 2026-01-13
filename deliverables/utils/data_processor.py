@@ -77,11 +77,11 @@ def main():
     raw_folder = Path("deliverables/data/raw")
     processed_folder = Path("deliverables/data/processed")
     processed_folder.mkdir(parents=True, exist_ok=True)
-    output_file = processed_folder / "mock_processed_runs.csv"
+    output_file = processed_folder / "processed_data.csv"
 
     run_folders = [
         p for p in raw_folder.iterdir()
-        if p.is_dir() and p.name.startswith("mock_run")
+        if p.is_dir() and p.name.startswith("run")
     ]
 
     valid_runs = []
@@ -94,7 +94,6 @@ def main():
         return
 
     aggregated = {
-        "run_id": "Don't know how id runs look",
         "game_type": valid_runs[0]["game_type"],
         "algorithm": valid_runs[0]["algorithm"],
         "learning_rate": mean(r["learning_rate"] for r in valid_runs),
