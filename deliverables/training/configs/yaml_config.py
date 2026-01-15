@@ -2,13 +2,12 @@
 yaml_config.py
 
 Description:
-    abstract class the provides the structure and shared hyperperameters for both ppo
+    abstract class that provides the structure and shared hyperperameters for both ppo
     and sac yaml config classes
 
 Usage:
     this module is used by both ppo_config.py and sac_config.py so you
     do not address this class directly
-
 Author:
     Denis
 Date:

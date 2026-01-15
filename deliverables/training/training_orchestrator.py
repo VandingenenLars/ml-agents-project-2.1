@@ -9,8 +9,8 @@ class training_orchestrator:
 
     # Flow:
     # 1. Create YAML config file
-    # 2. run training 
-    # 3. use datcollector class 
+    # 2. run training
+    # 3. use datacollector class
 
     def __init__(
         self,

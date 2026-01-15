@@ -57,7 +57,7 @@ class training_metrics_collector:
         if force:
             command.append("--force")
         if no_graphics:
-            command.append("--no-graphics") 
+            command.append("--no-graphics")
 
         print(f"Starting ML-Agents training with command: {' '.join(command)}")
         try:
@@ -72,7 +72,7 @@ class training_metrics_collector:
         Collects scalar metrics using tensorboard
         """
         tensorboard_dir = self.mlagents_results_dir
-        
+
         if not tensorboard_dir.exists():
             print(f"Warning: TensorBoard directory not found: {tensorboard_dir}")
             return pd.DataFrame()
@@ -81,39 +81,39 @@ class training_metrics_collector:
             print(f"Reading TensorBoard logs from: {tensorboard_dir}")
             reader = SummaryReader(str(tensorboard_dir), pivot=True)
             df = reader.scalars
-            
+
             if df.empty:
                 print("Warning: No scalar metrics found in TensorBoard logs")
                 return pd.DataFrame()
 
             print(f"Available columns: {df.columns.tolist()}")
-            
+
             rename_dict = {}
             for display_name, tag in self.DYNAMIC_METRIC_TAGS.items():
                 if tag in df.columns:
                     rename_dict[tag] = display_name
 
             df = df.rename(columns=rename_dict)
-            
+
             metrics_csv = self.run_dir / "training_metrics.csv"
             df.to_csv(metrics_csv, index=False)
             print(f"Saved training metrics CSV to: {metrics_csv}")
-            
+
             metrics_json = self.run_dir / "training_metrics.json"
-            
+
             metrics_list = df.to_dict('records')
-            
+
             with open(metrics_json, 'w') as f:
                 json.dump({
                     "run_id": self.run_id,
                     "total_steps": int(df['step'].iloc[-1]) if 'step' in df.columns else None,
                     "metrics": metrics_list
                 }, f, indent=2)
-            
+
             print(f"Saved training metrics JSON to: {metrics_json}")
-            
+
             return df
-            
+
         except Exception as e:
             print(f"Error reading TensorBoard logs: {e}")
             import traceback
@@ -134,7 +134,7 @@ class training_metrics_collector:
         if not reached_target.empty:
             first_target_row = reached_target.iloc[0]
             target_metrics["iterations_to_target"] = int(first_target_row['step']) if 'step' in first_target_row else -1
-            
+
             if 'wall_time' in scalar_df.columns:
                 start_time = scalar_df['wall_time'].min()
                 elapsed_time_sec = first_target_row['wall_time'] - start_time
