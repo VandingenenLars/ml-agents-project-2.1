@@ -48,7 +48,8 @@ class training_metrics_collector:
             f"{config_file}",
             f"--run-id={self.run_id}",
             f"--base-port={self.port}",
-            "--train"
+            "--train",
+            "--torch-device=cuda"
         ]
 
         if env_file:

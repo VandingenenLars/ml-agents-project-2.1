@@ -76,7 +76,7 @@ class training_orchestrator:
 
 
 if __name__ == "__main__":
-    UNITY_APP = "/Users/larsvandingenen/MLagents/ml-agents-project-2.1/Builds/Mygame.app"
+    UNITY_APP = r"D:\ml-agents-project-2.1\Builds\3DBall\UnityEnvironment.exe"
 
     orch = training_orchestrator(
         unity_env_path=UNITY_APP,
