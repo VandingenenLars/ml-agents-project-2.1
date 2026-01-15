@@ -26,11 +26,10 @@ from sklearn.preprocessing import StandardScaler
 SCRIPT_DIR = Path(__file__).resolve().parent
 PROJECT_ROOT = SCRIPT_DIR.parents[1]
 
-"""SWITCH IS MOCK TO FALSE IF RUNNING WITH ACTUAL PROCESSED DATA"""
-is_mock = True
+
 DATA_DIR = PROJECT_ROOT / "deliverables" / "data"
-CSV_PATH = "mock_processed_data.csv" if is_mock else "processed_data.csv"
-PROCESSED_PATH = DATA_DIR / "processed" / "mock_processed_data.csv"
+CSV_PATH = "processed_data.csv"
+PROCESSED_PATH = DATA_DIR / "processed" / "processed_data.csv"
 FEATURES_DIR = DATA_DIR / "features"
 
 TEST_SIZE = 0.2
@@ -53,7 +52,6 @@ def extract_features_and_targets(df: pd.DataFrame):
         "iterations_to_target",
         "peak_ram_usage_mb",
         "avg_ram_usage_mb",
-        "training_time_to_target_sec"
     ]
 
     feature_columns = [c for c in df.columns if c not in target_columns]
@@ -100,7 +98,6 @@ def main():
     )
 
     save_datasets(X_train, X_test, y_train, y_test)
-
 
 if __name__ == "__main__":
     main()
