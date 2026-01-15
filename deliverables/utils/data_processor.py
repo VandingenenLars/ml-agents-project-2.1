@@ -50,6 +50,7 @@ def process_run(run_folder: Path):
             break
 
     row = {
+        "run_id" : run_folder.name,
         "game_type": config.get("game_type"),
         "algorithm": config.get("algorithm"),
         "learning_rate": config.get("learning_rate"),
