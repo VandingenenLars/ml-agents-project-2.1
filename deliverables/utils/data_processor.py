@@ -32,6 +32,7 @@ def process_run(run_folder: Path):
     training_metrics = load_json(run_folder / "training_metrics.json")
 
     if not config or not system_metrics or not training_metrics:
+        print(f"Skipping {run_folder.name}: missing files")
         return None
 
     target_mean_reward = config.get("target_mean_reward", 100)
@@ -41,19 +42,14 @@ def process_run(run_folder: Path):
     avg_ram = mean(m["ram_used_mb"] for m in system_metrics)
     peak_ram = max(m["ram_used_mb"] for m in system_metrics)
 
-    iterations_to_target = 0
-    training_time_to_target_sec = 0.0
-    first_time = datetime.fromisoformat(training_metrics[0]["timestamp"])
-
+    iterations_to_target = None
     for tm in training_metrics:
         mean_reward = tm.get("mean_reward")
         if mean_reward is not None and mean_reward >= target_mean_reward:
-            iterations_to_target = tm.get("steps", 0)
-            current_time = datetime.fromisoformat(tm["timestamp"])
-            training_time_to_target_sec = (current_time - first_time).total_seconds()
+            iterations_to_target = tm.get("step")
             break
 
-    return {
+    row = {
         "game_type": config.get("game_type"),
         "algorithm": config.get("algorithm"),
         "learning_rate": config.get("learning_rate"),
@@ -71,12 +67,13 @@ def process_run(run_folder: Path):
         "peak_ram_usage_mb": peak_ram,
         "target_mean_reward": target_mean_reward,
         "iterations_to_target": iterations_to_target,
-        "training_time_to_target_sec": training_time_to_target_sec
     }
 
+    return row
+
 def main():
-    raw_folder = Path("deliverables/data/raw")
-    processed_folder = Path("deliverables/data/processed")
+    raw_folder = Path("../data/raw")
+    processed_folder = Path("../data/processed")
     processed_folder.mkdir(parents=True, exist_ok=True)
     output_file = processed_folder / "processed_data.csv"
 
@@ -85,42 +82,26 @@ def main():
         if p.is_dir() and p.name.startswith("run")
     ]
 
-    valid_runs = []
+    rows = []
 
     for folder in run_folders:
-        result = process_run(folder)
-        if result is not None:
-            valid_runs.append(result)
-    if not valid_runs:
-        return
+        row = process_run(folder)
+        if row:
+            rows.append(row)
 
-    aggregated = {
-        "game_type": valid_runs[0]["game_type"],
-        "algorithm": valid_runs[0]["algorithm"],
-        "learning_rate": mean(r["learning_rate"] for r in valid_runs),
-        "batch_size": mean(r["batch_size"] for r in valid_runs),
-        "buffer_size": mean(r["buffer_size"] for r in valid_runs),
-        "num_epoch": mean(r["num_epoch"] for r in valid_runs),
-        "num_units": mean(r["num_units"] for r in valid_runs),
-        "num_layers": mean(r["num_layers"] for r in valid_runs),
-        "max_steps": mean(r["max_steps"] for r in valid_runs),
-        "cpu_cores": mean(r["cpu_cores"] for r in valid_runs),
-        "total_ram_gb": mean(r["total_ram_gb"] for r in valid_runs),
-        "avg_cpu_utilization": mean(r["avg_cpu_utilization"] for r in valid_runs),
-        "avg_gpu_utilization": mean(r["avg_gpu_utilization"] for r in valid_runs),
-        "avg_ram_usage_mb": mean(r["avg_ram_usage_mb"] for r in valid_runs),
-        "peak_ram_usage_mb": max(r["peak_ram_usage_mb"] for r in valid_runs),
-        "target_mean_reward": mean(r["target_mean_reward"] for r in valid_runs),
-        "iterations_to_target": mean(r["iterations_to_target"] for r in valid_runs),
-        "training_time_to_target_sec": mean(r["training_time_to_target_sec"] for r in valid_runs)
-    }
+    if not rows:
+        print("No valid runs found.")
 
-    fieldnames = list(aggregated.keys())
+
+    fieldnames = list(rows[0].keys())
 
     with open(output_file, "w", newline="", encoding="utf-8") as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
         writer.writeheader()
-        writer.writerow(aggregated)
+        for r in rows:
+            writer.writerow(r)
+
+    print("Done processing all runs.")
 
 if __name__ == "__main__":
     main()
