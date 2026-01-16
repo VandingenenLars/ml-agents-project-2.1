@@ -19,6 +19,7 @@ from pathlib import Path
 from datetime import datetime
 from statistics import mean
 
+
 def load_json(filepath):
     try:
         with open(filepath, "r", encoding="utf-8") as f:
@@ -43,10 +44,20 @@ def process_run(run_folder: Path):
     peak_ram = max(m["ram_used_mb"] for m in system_metrics)
 
     iterations_to_target = None
+    training_success = False
+
+    try:
+        start_time = datetime.fromisoformat(system_metrics[0]["timestamp"])
+        end_time = datetime.fromisoformat(system_metrics[-1]["timestamp"])
+        seconds_to_target = (end_time - start_time).total_seconds()
+    except (KeyError, ValueError, IndexError):
+        seconds_to_target = None
+
     for tm in training_metrics:
         mean_reward = tm.get("mean_reward")
         if mean_reward is not None and mean_reward >= target_mean_reward:
             iterations_to_target = tm.get("step")
+            training_success = True
             break
 
     row = {
@@ -68,6 +79,8 @@ def process_run(run_folder: Path):
         "peak_ram_usage_mb": peak_ram,
         "target_mean_reward": target_mean_reward,
         "iterations_to_target": iterations_to_target,
+        "seconds_to_target": seconds_to_target,
+        "training_success": int(training_success),
     }
 
     return row

@@ -8,7 +8,6 @@ Description:
 Usage:
     Input: Preprocessed .csv file
     Output: Feature data sets (X_train, X_test, y_train, y_test)
-
 Author:
     Andreas
 Date:
@@ -50,8 +49,8 @@ def extract_features_and_targets(df: pd.DataFrame):
     # !!! Update this list if schema changes !!!
     target_columns = [
         "iterations_to_target",
-        "peak_ram_usage_mb",
-        "avg_ram_usage_mb",
+        "seconds_to_target",
+        "training_success",
     ]
 
     feature_columns = [c for c in df.columns if c not in target_columns]
@@ -61,17 +60,25 @@ def extract_features_and_targets(df: pd.DataFrame):
     return X, y
 
 
-def preprocess_features(X: pd.DataFrame) -> pd.DataFrame:
+def preprocess_features(X: pd.DataFrame):
     """Encode categorical columns and scale numeric features."""
+
+    # Save run_id for analysis, drop from training set
+    run_ids = X["run_id"] if "run_id" in X else None
+    X = X.drop(columns=["run_id"], errors="ignore")
+
+    # Fill None values
+    numeric_cols = X.select_dtypes(include=["int64", "float64"]).columns
+    X[numeric_cols] = X[numeric_cols].fillna(0)
 
     # Encode categorical variables (one-hot)
     X = pd.get_dummies(X, columns=["game_type", "algorithm"], drop_first=True)
 
     # Scale numeric columns
-    numeric_cols = X.select_dtypes(include=["int64", "float64"]).columns
     scaler = StandardScaler()
     X[numeric_cols] = scaler.fit_transform(X[numeric_cols])
-    return X
+
+    return X, run_ids
 
 
 def save_datasets(X_train, X_test, y_train, y_test):
@@ -91,13 +98,16 @@ def main():
 
     df = load_data(PROCESSED_PATH)
     X, y = extract_features_and_targets(df)
-    X = preprocess_features(X)
+    X, run_ids= preprocess_features(X)
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=TEST_SIZE, random_state=RANDOM_STATE
+    X_train, X_test, y_train, y_test, run_ids_train, run_ids_test = train_test_split(
+        X, y, run_ids, test_size=TEST_SIZE, random_state=RANDOM_STATE
     )
 
     save_datasets(X_train, X_test, y_train, y_test)
+
+    run_ids_test.to_csv(FEATURES_DIR / "run_ids_train.csv", index=False)
+    run_ids_train.to_csv(FEATURES_DIR / "run_ids_test.csv", index=False)
 
 if __name__ == "__main__":
     main()

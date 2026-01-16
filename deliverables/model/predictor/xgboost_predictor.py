@@ -41,14 +41,6 @@ def load_feature_sets():
     y_test = pd.read_csv(FEATURES_DIR / "y_test.csv")
     return X_train, X_test, y_train, y_test
 
-
-def encode_categorical(df):
-    for col in df.select_dtypes(include=["object"]).columns:
-        if col != "run_id":
-            df[col] = df[col].astype("category")
-    return df
-
-
 def train_regressor(name, X_train, y_train, X_test, y_test):
     model = XGBRegressor(
         n_estimators=300,
@@ -121,15 +113,16 @@ def train_efficiency_classifier(X_train, X_test, y_train, y_test, weights=(1/3, 
 def main():
     X_train, X_test, y_train, y_test = load_feature_sets()
 
-    # Keep a copy of X_test with run_id for summary.csv
+    run_ids_test = pd.read_csv(FEATURES_DIR / "run_ids_test.csv")
     summary_df = X_test.copy()
+    summary_df["run_id"] = run_ids_test
 
     # Encode categorical columns in XGBoost-friendly format
-    X_train = encode_categorical(X_train).drop(columns=["run_id"], errors="ignore")
-    X_test_encoded = encode_categorical(X_test).drop(columns=["run_id"], errors="ignore")
+    X_train = X_train
+    X_test_encoded = X_test
 
     targets = [
-        "training_time_to_target_sec",
+        "seconds_to_target",
         "iterations_to_target",
         "peak_ram_usage_mb",
         "avg_ram_usage_mb",
