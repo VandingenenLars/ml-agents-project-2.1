@@ -2,15 +2,18 @@
 xgboost_predictor.py
 
 Description:
-    Describe what this module does.
+    Train XGBoost models to predict:
+    1. Training success (binary classifier)
+    2. Training duration (regressor for successful runs)
+    3. Algorithm efficiency (binary classifier with weighted function for successful runs)
 
 Usage:
-    Example of how to use this module.
+    Run as main script: python xgboost_predictor.py
 
 Author:
     Andreas Constantinou
 Date:
-    2025-11-25
+    2025-11-25 - 2026-01-16
 """
 import os
 from pathlib import Path
@@ -39,6 +42,8 @@ def load_feature_sets():
     X_test = pd.read_csv(FEATURES_DIR / "X_test.csv")
     y_train = pd.read_csv(FEATURES_DIR / "y_train.csv")
     y_test = pd.read_csv(FEATURES_DIR / "y_test.csv")
+    run_ids_train = pd.read_csv(FEATURES_DIR / "run_ids_train.csv")
+    run_ids_test = pd.read_csv(FEATURES_DIR / "run_ids_test.csv")
     return X_train, X_test, y_train, y_test
 
 def train_regressor(name, X_train, y_train, X_test, y_test):
@@ -54,19 +59,10 @@ def train_regressor(name, X_train, y_train, X_test, y_test):
     model.fit(X_train, y_train)
     preds = model.predict(X_test)
 
-    mae = mean_absolute_error(y_test, preds)
-    rmse = np.sqrt(mean_squared_error(y_test, preds))
-
-    print(f"\n{name} MAE: {mae:.4f}, RMSE: {rmse:.4f}")
-
-    model_path = MODELS_DIR / f"{name}.json"
-    model.save_model(model_path)
-
-    pred_path = PREDICTIONS_DIR / f"{name}_predictions.csv"
-    pd.DataFrame(preds, columns=[f"pred_{name}"]).to_csv(pred_path, index=False)
+    model.save_model(MODELS_DIR / f"{name}.json")
+    pd.DataFrame(preds, columns=[f"pred_{name}"]).to_csv(PREDICTIONS_DIR / f"{name}_predictions.csv", index=False)
 
     return preds
-
 
 def compute_efficiency(df, weights=(1/3, 1/3, 1/3)):
     T_norm = (df['training_time_to_target_sec'] - df['training_time_to_target_sec'].min()) / \
