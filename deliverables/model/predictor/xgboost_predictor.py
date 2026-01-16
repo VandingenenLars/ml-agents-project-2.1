@@ -64,18 +64,7 @@ def train_regressor(name, X_train, y_train, X_test, y_test):
 
     return preds
 
-def compute_efficiency(df, weights=(1/3, 1/3, 1/3)):
-    T_norm = (df['training_time_to_target_sec'] - df['training_time_to_target_sec'].min()) / \
-             (df['training_time_to_target_sec'].max() - df['training_time_to_target_sec'].min())
-    I_norm = (df['iterations_to_target'] - df['iterations_to_target'].min()) / \
-             (df['iterations_to_target'].max() - df['iterations_to_target'].min())
-    R_norm = (df['peak_ram_usage_mb'] - df['peak_ram_usage_mb'].min()) / \
-             (df['peak_ram_usage_mb'].max() - df['peak_ram_usage_mb'].min())
-    alpha, beta, gamma = weights
-    return alpha*T_norm + beta*I_norm + gamma*R_norm
-
-
-def train_efficiency_classifier(X_train, X_test, y_train, y_test, weights=(1/3, 1/3, 1/3)):
+def train_classifier(X_train, X_test, y_train, y_test, weights=(1/3, 1/3, 1/3)):
     y_train_eff = compute_efficiency(y_train, weights)
     y_test_eff = compute_efficiency(y_test, weights)
 
@@ -93,17 +82,21 @@ def train_efficiency_classifier(X_train, X_test, y_train, y_test, weights=(1/3, 
     )
     clf.fit(X_train, y_train_cls)
     preds = clf.predict(X_test)
-    acc = accuracy_score(y_test_cls, preds)
 
-    print(f"\nEfficiency Classifier Accuracy: {acc:.4f}")
-
-    model_path = MODELS_DIR / "efficiency_classifier.json"
-    clf.save_model(model_path)
-
-    pred_path = PREDICTIONS_DIR / "efficiency_classifier_predictions.csv"
-    pd.DataFrame(preds, columns=["pred_efficiency_class"]).to_csv(pred_path, index=False)
+    clf.save_model(MODELS_DIR / "efficiency_classifier.json")
+    pd.DataFrame(preds, columns=["pred_efficiency_class"]).to_csv(PREDICTIONS_DIR / "efficiency_classifier_predictions.csv", index=False)
 
     return preds
+
+def compute_efficiency(df, weights=(1/3, 1/3, 1/3)):
+    T_norm = (df['training_time_to_target_sec'] - df['training_time_to_target_sec'].min()) / \
+             (df['training_time_to_target_sec'].max() - df['training_time_to_target_sec'].min())
+    I_norm = (df['iterations_to_target'] - df['iterations_to_target'].min()) / \
+             (df['iterations_to_target'].max() - df['iterations_to_target'].min())
+    R_norm = (df['peak_ram_usage_mb'] - df['peak_ram_usage_mb'].min()) / \
+             (df['peak_ram_usage_mb'].max() - df['peak_ram_usage_mb'].min())
+    alpha, beta, gamma = weights
+    return alpha*T_norm + beta*I_norm + gamma*R_norm
 
 
 def main():
