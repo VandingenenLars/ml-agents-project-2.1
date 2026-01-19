@@ -43,7 +43,6 @@ class training_orchestrator:
         cfg = self.create_yaml()
         run_id = f"run_{int(time.time())}"
 
-        # Create single run folder (no subfolders)
         run_path = os.path.join(self.base_data_path, run_id)
         os.makedirs(run_path, exist_ok=True)
 
@@ -76,8 +75,7 @@ class training_orchestrator:
 
 
 if __name__ == "__main__":
-    UNITY_APP = r"D:\ml-agents-project-2.1\Builds\3DBall\UnityEnvironment.exe"
-
+    UNITY_APP = "/Users/larsvandingenen/MLagents/ml-agents-project-2.1/Builds/Mygame.app"
     orch = training_orchestrator(
         unity_env_path=UNITY_APP,
         behavior_name="3DBall",

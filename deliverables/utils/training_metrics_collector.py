@@ -1,35 +1,19 @@
-"""
-training_metrics_collector.py
-
-Description:
-    Collects training metrics from ML-Agents TensorBoard logs.
-
-Usage:
-    Used by data_collector to monitor training progress.
-
-Author:
-    Lars
-Date:
-    YYYY-MM-DD
-"""
 import subprocess
 import os
 import json
 import sys
-import time
 from pathlib import Path
+from datetime import datetime
 import pandas as pd
 from tbparse import SummaryReader
 
 class training_metrics_collector:
-
+    """
+    Collects training metrics from ML-Agents TensorBoard logs and syncs timestamps.
+    """
     DYNAMIC_METRIC_TAGS = {
-        'Cumulative Reward': 'Environment/Cumulative Reward',
-        'Episode Length': 'Environment/Episode Length',
-        'Policy Loss': 'Losses/Policy Loss',
-        'Value Loss': 'Losses/Value Loss',
-        'Learning Rate': 'Policy/Learning Rate',
-        'Entropy': 'Policy/Entropy'
+        'mean_reward': 'Environment/Cumulative Reward',
+        'loss': 'Losses/Policy Loss',
     }
 
     def __init__(self, run_id: str, run_dir: str, port: int, target_reward: float = None):
@@ -49,95 +33,80 @@ class training_metrics_collector:
             f"--run-id={self.run_id}",
             f"--base-port={self.port}",
             "--train",
-            "--torch-device=cuda"
+            "--torch-device=cpu"
         ]
-
-        if env_file:
-            command.append(f"--env={env_file}")
-        if force:
-            command.append("--force")
-        if no_graphics:
-            command.append("--no-graphics")
+        if env_file: command.append(f"--env={env_file}")
+        if force: command.append("--force")
+        if no_graphics: command.append("--no-graphics")
 
         print(f"Starting ML-Agents training with command: {' '.join(command)}")
         try:
-            process = subprocess.Popen(command)
-            return process
+            return subprocess.Popen(command)
         except FileNotFoundError:
-            print(f"Error: 'mlagents-learn' not found. Install ML-Agents.", file=sys.stderr)
+            print(f"Error: 'mlagents-learn' not found.", file=sys.stderr)
             raise
 
     def collect_scalar_metrics(self) -> pd.DataFrame:
-        """
-        Collects scalar metrics using tensorboard
-        """
-        tensorboard_dir = self.mlagents_results_dir
-
-        if not tensorboard_dir.exists():
-            print(f"Warning: TensorBoard directory not found: {tensorboard_dir}")
+        if not self.mlagents_results_dir.exists():
+            print(f"Warning: TensorBoard directory not found: {self.mlagents_results_dir}")
             return pd.DataFrame()
 
         try:
-            print(f"Reading TensorBoard logs from: {tensorboard_dir}")
-            reader = SummaryReader(str(tensorboard_dir), pivot=True)
-            df = reader.scalars
+            print(f"Reading TensorBoard logs from: {self.mlagents_results_dir}")
+            
+            reader = SummaryReader(str(self.mlagents_results_dir))
+            df_raw = reader.scalars
 
-            if df.empty:
-                print("Warning: No scalar metrics found in TensorBoard logs")
+            if df_raw.empty:
                 return pd.DataFrame()
 
-            print(f"Available columns: {df.columns.tolist()}")
+            
+            df_pivot = df_raw.pivot(index='step', columns='tag', values='value').reset_index()
+            
+            
+            rename_dict = {
+                'step': 'steps',
+                self.DYNAMIC_METRIC_TAGS['mean_reward']: 'mean_reward',
+                self.DYNAMIC_METRIC_TAGS['loss']: 'loss'
+            }
+            df_pivot = df_pivot.rename(columns={k: v for k, v in rename_dict.items() if k in df_pivot.columns})
 
-            rename_dict = {}
-            for display_name, tag in self.DYNAMIC_METRIC_TAGS.items():
-                if tag in df.columns:
-                    rename_dict[tag] = display_name
+            # calculate time using elapsed time
+            start_time_epoch = os.path.getctime(self.mlagents_results_dir)
+            
+            
+            current_time_epoch = datetime.now().timestamp()
+            total_duration = current_time_epoch - start_time_epoch
+            max_steps = df_pivot['steps'].max() if not df_pivot.empty else 1
 
-            df = df.rename(columns=rename_dict)
+            def calculate_timestamp(step):
+                elapsed = (step / max_steps) * total_duration
+                actual_time = start_time_epoch + elapsed
+                return datetime.fromtimestamp(actual_time).strftime('%Y-%m-%dT%H:%M:%S')
 
-            metrics_csv = self.run_dir / "training_metrics.csv"
-            df.to_csv(metrics_csv, index=False)
-            print(f"Saved training metrics CSV to: {metrics_csv}")
+            df_pivot['timestamp'] = df_pivot['steps'].apply(calculate_timestamp)
+
+            target_cols = ['timestamp', 'mean_reward', 'steps', 'loss']
+            df_final = df_pivot[[c for c in target_cols if c in df_pivot.columns]].copy()
 
             metrics_json = self.run_dir / "training_metrics.json"
-
-            metrics_list = df.to_dict('records')
-
             with open(metrics_json, 'w') as f:
-                json.dump({
-                    "run_id": self.run_id,
-                    "total_steps": int(df['step'].iloc[-1]) if 'step' in df.columns else None,
-                    "metrics": metrics_list
-                }, f, indent=2)
+                json.dump(df_final.to_dict('records'), f, indent=2)
 
-            print(f"Saved training metrics JSON to: {metrics_json}")
-
-            return df
+            print(f"Saved synchronized training metrics with calculated timestamps: {metrics_json}")
+            return df_final
 
         except Exception as e:
-            print(f"Error reading TensorBoard logs: {e}")
-            import traceback
-            traceback.print_exc()
+            print(f"Error processing metrics: {e}")
             return pd.DataFrame()
 
     def calculate_target_metrics(self, scalar_df: pd.DataFrame, target_reward: float) -> dict:
-        target_metrics = {"iterations_to_target": -1, "training_time_to_target": -1.0}
-        if scalar_df.empty or target_reward is None:
+        target_metrics = {"iterations_to_target": -1}
+        if scalar_df.empty or target_reward is None or 'mean_reward' not in scalar_df.columns:
             return target_metrics
 
-        if 'Cumulative Reward' not in scalar_df.columns:
-            print("Warning: 'Cumulative Reward' column not found in metrics")
-            return target_metrics
-
-        reached_target = scalar_df[scalar_df['Cumulative Reward'] >= target_reward]
-
-        if not reached_target.empty:
-            first_target_row = reached_target.iloc[0]
-            target_metrics["iterations_to_target"] = int(first_target_row['step']) if 'step' in first_target_row else -1
-
-            if 'wall_time' in scalar_df.columns:
-                start_time = scalar_df['wall_time'].min()
-                elapsed_time_sec = first_target_row['wall_time'] - start_time
-                target_metrics["training_time_to_target"] = round(elapsed_time_sec, 2)
-
+        reached = scalar_df[scalar_df['mean_reward'] >= target_reward]
+        if not reached.empty:
+            target_metrics["iterations_to_target"] = int(reached.iloc[0]['steps'])
+        
         return target_metrics
