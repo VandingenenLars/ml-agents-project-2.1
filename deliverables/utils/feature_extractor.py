@@ -8,8 +8,9 @@ Description:
 Usage:
     Input: Preprocessed .csv file
     Output: Feature data sets (X_train, X_test, y_train, y_test)
+    run module as main class using `python feature_extractor.py`
 Author:
-    Andreas
+    Andreas Constantinou
 Date:
     2025-11-10
 """
@@ -17,6 +18,7 @@ Date:
 import os
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
@@ -41,16 +43,17 @@ def load_data(filepath: str) -> pd.DataFrame:
         raise FileNotFoundError(f"Processed data not found at: {filepath}")
     return pd.read_csv(filepath)
 
-
 def extract_features_and_targets(df: pd.DataFrame):
     """
     Split dataframe into features (X) and targets (y).
     """
     # !!! Update this list if schema changes !!!
     target_columns = [
-        "iterations_to_target",
-        "seconds_to_target",
-        "training_success",
+        "avg_ram_usage_mb",
+        "peak_ram_usage_mb",
+        "seconds_to_threshold",
+        "iterations_to_threshold",
+        "reached_threshold"
     ]
 
     feature_columns = [c for c in df.columns if c not in target_columns]
@@ -81,7 +84,7 @@ def preprocess_features(X: pd.DataFrame):
     return X, run_ids
 
 
-def save_datasets(X_train, X_test, y_train, y_test):
+def save_datasets(X_train, X_test, y_train, y_test, run_ids_train, run_ids_test):
     """Save output to destination folder."""
     os.makedirs(FEATURES_DIR, exist_ok=True)
 
@@ -89,6 +92,9 @@ def save_datasets(X_train, X_test, y_train, y_test):
     X_test.to_csv(os.path.join(FEATURES_DIR, "X_test.csv"), index=False)
     y_train.to_csv(os.path.join(FEATURES_DIR, "y_train.csv"), index=False)
     y_test.to_csv(os.path.join(FEATURES_DIR, "y_test.csv"), index=False)
+
+    run_ids_train.to_csv(FEATURES_DIR / "run_ids_train.csv", index=False)
+    run_ids_test.to_csv(FEATURES_DIR / "run_ids_test.csv", index=False)
 
     print(f" Features saved in {FEATURES_DIR}")
 
@@ -101,13 +107,10 @@ def main():
     X, run_ids= preprocess_features(X)
 
     X_train, X_test, y_train, y_test, run_ids_train, run_ids_test = train_test_split(
-        X, y, run_ids, test_size=TEST_SIZE, random_state=RANDOM_STATE
+        X, y, run_ids, test_size=TEST_SIZE, random_state=RANDOM_STATE, stratify=y["reached_threshold"]
     )
 
-    save_datasets(X_train, X_test, y_train, y_test)
-
-    run_ids_test.to_csv(FEATURES_DIR / "run_ids_train.csv", index=False)
-    run_ids_train.to_csv(FEATURES_DIR / "run_ids_test.csv", index=False)
+    save_datasets(X_train, X_test, y_train, y_test, run_ids_train, run_ids_test)
 
 if __name__ == "__main__":
     main()

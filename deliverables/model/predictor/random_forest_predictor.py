@@ -14,8 +14,8 @@ DATA_DIR = PROJECT_ROOT / "deliverables" / "data"
 FEATURES_DIR = DATA_DIR / "features"
 PROCESSED_DIR = DATA_DIR / "processed"
 RAW_DIR = DATA_DIR / "raw"
-MODELS_DIR = DATA_DIR / "models"
-PREDICTIONS_DIR = DATA_DIR / "predictions"
+MODELS_DIR = DATA_DIR / "random_forest" / "models"
+PREDICTIONS_DIR = DATA_DIR / "predictions/random_forest"
 
 os.makedirs(MODELS_DIR, exist_ok=True)
 os.makedirs(PREDICTIONS_DIR, exist_ok=True)
@@ -26,27 +26,55 @@ def load_feature_sets():
     X_test = pd.read_csv(FEATURES_DIR / "X_test.csv")
     y_train = pd.read_csv(FEATURES_DIR / "y_train.csv")
     y_test = pd.read_csv(FEATURES_DIR / "y_test.csv")
-    return X_train, X_test, y_train, y_test
+    run_ids_train = pd.read_csv(FEATURES_DIR / "run_ids_train.csv")
+    run_ids_test = pd.read_csv(FEATURES_DIR / "run_ids_test.csv")
+    return X_train, X_test, y_train, y_test, run_ids_train, run_ids_test
 
-def encode_categorical(df):
-    categorical_cols = df.select_dtypes(include=['object']).columns.tolist()
-    if "run_id" in categorical_cols:
-        categorical_cols.remove("run_id")
+def train_ram_regressor(name,X_train, X_test, y_train, y_test, target):
+    model = RandomForestRegressor(
+        n_estimators=300,
+        max_depth=15,
+        min_samples_leaf=2,
+        min_samples_split=5,
+        max_features="sqrt",
+        random_state=67
+    )
+    y_train_col = y_train[target].copy()
+    y_test_col = y_test[target].copy()
 
-    if categorical_cols:
-        df = pd.get_dummies(df, columns=categorical_cols,drop_first=True)
+    upper = y_train_col.quantile(0.995)
+    y_train_col = y_train_col.clip(upper=upper)
 
-    return df
+    y_train_log = np.log1p(y_train_col)
+    model.fit(X_train, y_train_log)
 
+    preds_log = model.predict(X_test)
+    preds_mb = np.expm1(preds_log)
 
-def train_regressor(name,X_train, X_test, y_train, y_test):
-    X_train_clean = X_train[y_train.notna()]
-    y_train_clean = y_train[y_train.notna()]
+    mae = mean_absolute_error(y_test_col, preds_mb)
+    rmse = np.sqrt(mean_squared_error(y_test_col, preds_mb))
+    print(f"{target} - MAE: {mae:.2f}, RMSE: {rmse:.2f}")
 
-    if len(y_train_clean) == 0:
+    model_path = MODELS_DIR / f"{name}.pkl"
+    joblib.dump(model,model_path)
+
+    pd.DataFrame(preds_mb, columns=[f"pred_{target}"]).to_csv(
+        PREDICTIONS_DIR / f"{target}_predictions.csv", index=False
+    )
+    return preds_mb
+
+def train_performance_regressor(name,X_train, y_train, X_test, y_test, target):
+    mask_train = y_train["reached_threshold"] == 1
+    mask_test = y_test["reached_threshold"] == 1
+
+    X_train_s = X_train.loc[mask_train]
+    y_train_s = y_train.loc[mask_train, target]
+    X_test_s = X_test.loc[mask_test]
+    y_test_s = y_test.loc[mask_test, target]
+
+    if len(y_train_s) == 0:
         print(f"{name}: No data to train with, skipping.")
         return [np.nan] * len(X_test)
-
 
     model = RandomForestRegressor(
         n_estimators=300,
@@ -56,11 +84,11 @@ def train_regressor(name,X_train, X_test, y_train, y_test):
         max_features="sqrt",
         random_state=67
     )
-    model.fit(X_train_clean, y_train_clean)
-    preds = model.predict(X_test)
+    model.fit(X_train_s, y_train_s)
+    preds = model.predict(X_test_s)
 
-    mae = mean_absolute_error(y_test, preds)
-    rmse = np.sqrt(mean_squared_error(y_test, preds))
+    mae = mean_absolute_error(y_test_s, preds)
+    rmse = np.sqrt(mean_squared_error(y_test_s, preds))
 
     print(f"\n{name} MAE: {mae:.4f}, RMSE: {rmse:.4f}")
 
@@ -70,25 +98,9 @@ def train_regressor(name,X_train, X_test, y_train, y_test):
     pred_path = PREDICTIONS_DIR / f"{name}_predictions.csv"
     pd.DataFrame(preds, columns=[f"pred_{name}"]).to_csv(pred_path, index=False)
 
-    return preds
+    return preds, X_test_s.index
 
-def compute_efficiency(df, weights=(1/2, 1/2)):
-    T_norm = (df['seconds_to_target'] - df['seconds_to_target'].min()) / \
-             (df['seconds_to_target'].max() - df['seconds_to_target'].min())
-    I_norm = (df['iterations_to_target'] - df['iterations_to_target'].min()) / \
-             (df['iterations_to_target'].max() - df['iterations_to_target'].min())
-    alpha, beta = weights
-    return alpha*T_norm + beta*I_norm
-
-
-def train_efficiency_classifier(X_train, X_test, y_train, y_test, weights=(1/2, 1/2)):
-    y_train_eff = compute_efficiency(y_train, weights)
-    y_test_eff = compute_efficiency(y_test, weights)
-
-    threshold = y_train_eff.median()
-    y_train_cls = (y_train_eff < threshold).astype(int)
-    y_test_cls = (y_test_eff < threshold).astype(int)
-
+def train_threshold_classifier(X_train, y_train, X_test, y_test):
     clf = RandomForestClassifier(
         n_estimators=250,
         max_depth=12,
@@ -97,56 +109,50 @@ def train_efficiency_classifier(X_train, X_test, y_train, y_test, weights=(1/2, 
         max_features='sqrt',
         random_state=67
     )
-    clf.fit(X_train, y_train_cls)
+    clf.fit(X_train, y_train["reached_threshold"])
     preds = clf.predict(X_test)
-    acc = accuracy_score(y_test_cls, preds)
+    probs = clf.predict_proba(X_test)[:, 1]
 
-    print(f"\nEfficiency Classifier Accuracy: {acc:.4f}")
+    acc = accuracy_score(y_test["reached_threshold"], preds)
+    print(f"\nThreshold success accuracy: {acc:.4f}")
 
-    model_path = MODELS_DIR / "efficiency_classifier_rf.pkl"
+    model_path = MODELS_DIR / f"threshold_success_classifier_rf.pkl"
     joblib.dump(clf,model_path)
 
-    pred_path = PREDICTIONS_DIR / "efficiency_classifier_rf_predictions.csv"
-    pd.DataFrame(preds, columns=["pred_efficiency_class"]).to_csv(pred_path, index=False)
+    pred_path = PREDICTIONS_DIR / f"threshold_success_rf_predictions.csv"
+    pd.DataFrame(preds, columns=[f"preds_threshold_success"]).to_csv(pred_path, index=False)
 
-    return preds
+    return preds, probs
 
 def main():
-    X_train, X_test, y_train, y_test = load_feature_sets()
+    X_train, X_test, y_train, y_test, run_ids_train, run_ids_test = load_feature_sets()
+    summary_df = pd.DataFrame({"run_id": run_ids_test["run_id"]})
     print("y_train columns:", y_train.columns.tolist())
 
-    run_ids_test = pd.read_csv(FEATURES_DIR / "run_ids_test.csv")
-    summary_df = X_test.copy()
-    summary_df["run_id"] = run_ids_test
-
-    # Encode categorical columns in one-hot encoding
-    X_train = encode_categorical(X_train.drop(columns=["run_id"],errors="ignore"))
-    X_test_encoded = encode_categorical(X_test.drop(columns=["run_id"],errors="ignore"))
-
-    targets = [
-        "seconds_to_target",
-        "iterations_to_target"
-    ]
-
-    for target in targets:
-        preds = train_regressor(
+    for target in ["avg_ram_usage_mb", "peak_ram_usage_mb"]:
+        preds = train_ram_regressor(
             name= f"regressor_{target}_rf",
             X_train=X_train,
-            y_train=y_train[target],
-            X_test=X_test_encoded,
-            y_test=y_test[target],
+            y_train=y_train,
+            X_test=X_test,
+            y_test=y_test,
+            target=target
         )
         summary_df[f"pred_{target}"] = preds
 
-    eff_preds = train_efficiency_classifier(X_train, X_test_encoded, y_train, y_test)
-    summary_df["pred_efficiency_class"] = eff_preds
+    threshold_preds, threshold_probs = train_threshold_classifier(X_train, y_train, X_test, y_test)
+    summary_df["pred_reached_threshold"] = threshold_preds
+    summary_df["pred_reached_threshold_prob"] = threshold_probs
+
+    for target in ["iterations_to_threshold", "seconds_to_threshold"]:
+        preds, idx = train_performance_regressor(target, X_train, y_train, X_test, y_test, target)
+        summary_df.loc[idx, f"pred_{target}"] = preds
 
     # Save summary.csv
     summary_path = PREDICTIONS_DIR / "summary_rf.csv"
     summary_df.to_csv(summary_path, index=False)
 
     print(f"\nAll models saved to {MODELS_DIR} and predictions + summary saved to {PREDICTIONS_DIR}.")
-
 
 if __name__ == "__main__":
     main()

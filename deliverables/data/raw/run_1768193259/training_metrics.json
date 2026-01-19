@@ -1,210 +1,114 @@
 [
   {
     "step": 30000,
+    "timestamp": 1768193299.0289903,
     "cumulative_reward": 1.227075219154358,
     "episode_length": 22.265892028808594,
-    "policy_loss": 0.07242291420698166,
-    "value_loss": 0.34899571537971497,
-    "policy_beta": 0.008226959966123104,
-    "entropy": 1.4189202785491943,
-    "policy_epsilon": 0.10715512186288834,
-    "policy_extrinsic_reward": 1.227075219154358,
-    "policy_extrinsic_value_estimate": 0.25754767656326294,
-    "learning_rate": 0.00013210598262958229
+    "policy_extrinsic_reward": 1.227075219154358
   },
   {
     "step": 60000,
+    "timestamp": 1768193334.176929,
     "cumulative_reward": 1.4551959037780762,
     "episode_length": 24.552810668945312,
-    "policy_loss": 0.07047576457262039,
-    "value_loss": 0.20153023302555084,
-    "policy_beta": 0.0078090280294418335,
-    "entropy": 1.4190752506256104,
-    "policy_epsilon": 0.10679119825363159,
-    "policy_extrinsic_reward": 1.4551959037780762,
-    "policy_extrinsic_value_estimate": 0.2642567455768585,
-    "learning_rate": 0.00012538681039586663
+    "policy_extrinsic_reward": 1.4551959037780762
   },
   {
     "step": 90000,
+    "timestamp": 1768193368.476072,
     "cumulative_reward": 2.00010347366333,
     "episode_length": 30.028955459594727,
-    "policy_loss": 0.06885696202516556,
-    "value_loss": 0.34140923619270325,
-    "policy_beta": 0.007252040784806013,
-    "entropy": 1.4144099950790405,
-    "policy_epsilon": 0.10630618780851364,
-    "policy_extrinsic_reward": 2.00010347366333,
-    "policy_extrinsic_value_estimate": 0.47652673721313477,
-    "learning_rate": 0.00011643199832178652
+    "policy_extrinsic_reward": 2.00010347366333
   },
   {
     "step": 120000,
+    "timestamp": 1768193401.5241907,
     "cumulative_reward": 3.42537784576416,
     "episode_length": 44.29607391357422,
-    "policy_loss": 0.07012537866830826,
-    "value_loss": 0.8743926286697388,
-    "policy_beta": 0.006694424897432327,
-    "entropy": 1.405794620513916,
-    "policy_epsilon": 0.10582062602043152,
-    "policy_extrinsic_reward": 3.42537784576416,
-    "policy_extrinsic_value_estimate": 0.990909993648529,
-    "learning_rate": 0.00010746707994258031
+    "policy_extrinsic_reward": 3.42537784576416
   },
   {
     "step": 150000,
+    "timestamp": 1768193433.4600332,
     "cumulative_reward": 6.531219005584717,
     "episode_length": 75.39340209960938,
-    "policy_loss": 0.06662719696760178,
-    "value_loss": 2.370527744293213,
-    "policy_beta": 0.00613505020737648,
-    "entropy": 1.3943368196487427,
-    "policy_epsilon": 0.10533353686332703,
-    "policy_extrinsic_reward": 6.531219005584717,
-    "policy_extrinsic_value_estimate": 1.993035078048706,
-    "learning_rate": 9.8473894468043e-05
+    "policy_extrinsic_reward": 6.531219005584717
   },
   {
     "step": 180000,
+    "timestamp": 1768193458.8244572,
     "cumulative_reward": 17.156099319458008,
     "episode_length": 181.43902587890625,
-    "policy_loss": 0.07337861508131027,
-    "value_loss": 3.684321165084839,
-    "policy_beta": 0.005715462379157543,
-    "entropy": 1.3835104703903198,
-    "policy_epsilon": 0.10496817529201508,
-    "policy_extrinsic_reward": 17.156099319458008,
-    "policy_extrinsic_value_estimate": 3.93576979637146,
-    "learning_rate": 9.17280776775442e-05
+    "policy_extrinsic_reward": 17.156099319458008
   },
   {
     "step": 210000,
+    "timestamp": 1768193489.93962,
     "cumulative_reward": 48.72834014892578,
     "episode_length": 509.6000061035156,
-    "policy_loss": 0.07087354362010956,
-    "value_loss": 3.774244785308838,
-    "policy_beta": 0.005295024253427982,
-    "entropy": 1.3710265159606934,
-    "policy_epsilon": 0.10460206866264343,
-    "policy_extrinsic_reward": 48.72834014892578,
-    "policy_extrinsic_value_estimate": 7.307077407836914,
-    "learning_rate": 8.49686111905612e-05
+    "policy_extrinsic_reward": 48.72834014892578
   },
   {
     "step": 240000,
+    "timestamp": 1768193519.9137728,
     "cumulative_reward": 84.760009765625,
     "episode_length": 848.7999877929688,
-    "policy_loss": 0.07205720245838165,
-    "value_loss": 1.4614887237548828,
-    "policy_beta": 0.004725905600935221,
-    "entropy": 1.3581514358520508,
-    "policy_epsilon": 0.10410649329423904,
-    "policy_extrinsic_reward": 84.760009765625,
-    "policy_extrinsic_value_estimate": 11.286566734313965,
-    "learning_rate": 7.58187597966753e-05
+    "policy_extrinsic_reward": 84.760009765625
   },
   {
     "step": 270000,
+    "timestamp": 1768193550.1917253,
     "cumulative_reward": 99.04335021972656,
     "episode_length": 989.7999877929688,
-    "policy_loss": 0.07100360840559006,
-    "value_loss": 0.5761194229125977,
-    "policy_beta": 0.004159870557487011,
-    "entropy": 1.3499962091445923,
-    "policy_epsilon": 0.10361360013484955,
-    "policy_extrinsic_reward": 99.04335021972656,
-    "policy_extrinsic_value_estimate": 14.16389274597168,
-    "learning_rate": 6.671848677797243e-05
+    "policy_extrinsic_reward": 99.04335021972656
   },
   {
     "step": 300000,
+    "timestamp": 1768193580.8309808,
     "cumulative_reward": 96.21563720703125,
     "episode_length": 961.84375,
-    "policy_loss": 0.07074692845344543,
-    "value_loss": 0.4124496281147003,
-    "policy_beta": 0.0035835132002830505,
-    "entropy": 1.3465583324432373,
-    "policy_epsilon": 0.10311172902584076,
-    "policy_extrinsic_reward": 96.21563720703125,
-    "policy_extrinsic_value_estimate": 15.92507266998291,
-    "learning_rate": 5.745226371800527e-05
+    "policy_extrinsic_reward": 96.21563720703125
   },
   {
     "step": 330000,
+    "timestamp": 1768193604.6794026,
     "cumulative_reward": 100.00001525878906,
     "episode_length": 999.0,
-    "policy_loss": 0.06588132679462433,
-    "value_loss": 0.08766038715839386,
-    "policy_beta": 0.0031544524244964123,
-    "entropy": 1.3433116674423218,
-    "policy_epsilon": 0.10273811221122742,
-    "policy_extrinsic_reward": 100.00001525878906,
-    "policy_extrinsic_value_estimate": 17.23689079284668,
-    "learning_rate": 5.055415749666281e-05
+    "policy_extrinsic_reward": 100.00001525878906
   },
   {
     "step": 360000,
+    "timestamp": 1768193634.6967034,
     "cumulative_reward": 100.00001525878906,
     "episode_length": 999.0,
-    "policy_loss": 0.06977677345275879,
-    "value_loss": 0.055037256330251694,
-    "policy_beta": 0.0027211776468902826,
-    "entropy": 1.3417048454284668,
-    "policy_epsilon": 0.10236082226037979,
-    "policy_extrinsic_reward": 100.00001525878906,
-    "policy_extrinsic_value_estimate": 18.107128143310547,
-    "learning_rate": 4.358830483397469e-05
+    "policy_extrinsic_reward": 100.00001525878906
   },
   {
     "step": 390000,
+    "timestamp": 1768193664.603398,
     "cumulative_reward": 100.00001525878906,
     "episode_length": 999.0,
-    "policy_loss": 0.07309684157371521,
-    "value_loss": 0.03857644647359848,
-    "policy_beta": 0.0021434782538563013,
-    "entropy": 1.340499997138977,
-    "policy_epsilon": 0.10185778141021729,
-    "policy_extrinsic_reward": 100.00001525878906,
-    "policy_extrinsic_value_estimate": 18.68767738342285,
-    "learning_rate": 3.430050128372386e-05
+    "policy_extrinsic_reward": 100.00001525878906
   },
   {
     "step": 420000,
+    "timestamp": 1768193694.650943,
     "cumulative_reward": 100.00001525878906,
     "episode_length": 999.0,
-    "policy_loss": 0.06907562166452408,
-    "value_loss": 0.027924057096242905,
-    "policy_beta": 0.0015657787444069982,
-    "entropy": 1.3392057418823242,
-    "policy_epsilon": 0.10135473310947418,
-    "policy_extrinsic_reward": 100.00001525878906,
-    "policy_extrinsic_value_estimate": 19.093610763549805,
-    "learning_rate": 2.5012699552462436e-05
+    "policy_extrinsic_reward": 100.00001525878906
   },
   {
     "step": 450000,
+    "timestamp": 1768193718.7539053,
     "cumulative_reward": 100.00001525878906,
     "episode_length": 999.0,
-    "policy_loss": 0.06566018611192703,
-    "value_loss": 0.019775910302996635,
-    "policy_beta": 0.0011325040832161903,
-    "entropy": 1.338455319404602,
-    "policy_epsilon": 0.10097745060920715,
-    "policy_extrinsic_reward": 100.00001525878906,
-    "policy_extrinsic_value_estimate": 19.37591552734375,
-    "learning_rate": 1.8046846889774315e-05
+    "policy_extrinsic_reward": 100.00001525878906
   },
   {
     "step": 480000,
+    "timestamp": 1768193749.0819361,
     "cumulative_reward": 98.2833480834961,
     "episode_length": 982.2000122070312,
-    "policy_loss": 0.07033030688762665,
-    "value_loss": 0.019205594435334206,
-    "policy_beta": 0.0006992294802330434,
-    "entropy": 1.3375341892242432,
-    "policy_epsilon": 0.10060016065835953,
-    "policy_extrinsic_reward": 98.2833480834961,
-    "policy_extrinsic_value_estimate": 19.574909210205078,
-    "learning_rate": 1.1080995136580896e-05
+    "policy_extrinsic_reward": 98.2833480834961
   }
 ]

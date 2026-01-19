@@ -2,23 +2,29 @@
 data_processor.py
 
 Description:
-    This code takes and loads 3 json files from a folder, each folder being a new run and procceses it. Than the data is worked into one single csv line.
-    This is done with multiple folder runs so that at the end there is 1 csv file with the data from all the runs, being ready to be worked on.
-
+    data_processor.py is responsible for processing all runs under 'data/raw/...'
+    all folders structure config.json. system_metrics.json and training_metrics.json
+    runs that are missing essential information are cleaned from the dataset
+    variables such as training_succes and iterations_to_convergence are derived from given data
+    results are saved to a single processed_data.csv under "data/processed/..." ready for feature extraction
+"
 Usage:
-    In order for this code to work there is needed to be at least one folder run.
+    run this module as a main class with `python data_processor.py`
 
 Author:
-    Jianu Mihnea-Alexandru
+    Jianu Mihnea-Alexandru / Andreas Constantinou
 Date:
      2025-11-10
 """
 import json
 import csv
 from pathlib import Path
-from datetime import datetime
 from statistics import mean
 
+import numpy as np
+
+TARGET_MEAN_REWARD = 85
+EARLY_FRACTION = 0.3
 
 def load_json(filepath):
     try:
@@ -32,36 +38,49 @@ def process_run(run_folder: Path):
     system_metrics = load_json(run_folder / "system_metrics.json")
     training_metrics = load_json(run_folder / "training_metrics.json")
 
-    if not config or not system_metrics or not training_metrics:
+    if not config or not training_metrics:
         print(f"Skipping {run_folder.name}: missing files")
         return None
 
-    target_mean_reward = config.get("target_mean_reward", 100)
+    # optional but supported / will help when using other's datasets
+    if system_metrics:
+        avg_cpu = mean(m["cpu_utilization"] for m in system_metrics)
+        avg_ram = mean(m["ram_used_mb"] for m in system_metrics)
+        peak_ram = max(m["ram_used_mb"] for m in system_metrics)
+    else:
+        avg_cpu = avg_ram = peak_ram = None
 
-    avg_cpu = mean(m["cpu_utilization"] for m in system_metrics)
-    avg_gpu = mean(m["gpu_utilization"] for m in system_metrics)
-    avg_ram = mean(m["ram_used_mb"] for m in system_metrics)
-    peak_ram = max(m["ram_used_mb"] for m in system_metrics)
+    cutoff = max(1, int(len(training_metrics) * EARLY_FRACTION))
+    valid_entries = [tm for tm in training_metrics[:cutoff] if tm.get("cumulative_reward") is not None
+                     and tm.get("step") is not None
+                     and tm.get("timestamp") is not None]
+    rewards = [tm["cumulative_reward"] for tm in valid_entries]
+    steps = [tm["step"] for tm in valid_entries]
+    timestamps = [tm["timestamp"] for tm in valid_entries]
 
-    iterations_to_target = None
-    training_success = False
+    reached_threshold = False
+    iterations_to_threshold = None
+    seconds_to_threshold = None
 
-    try:
-        start_time = datetime.fromisoformat(system_metrics[0]["timestamp"])
-        end_time = datetime.fromisoformat(system_metrics[-1]["timestamp"])
-        seconds_to_target = (end_time - start_time).total_seconds()
-    except (KeyError, ValueError, IndexError):
-        seconds_to_target = None
-
-    for tm in training_metrics:
-        mean_reward = tm.get("mean_reward")
-        if mean_reward is not None and mean_reward >= target_mean_reward:
-            iterations_to_target = tm.get("step")
-            training_success = True
-            break
+    if len(rewards) < 2:
+        # just use mean of all available rewards
+        curr_avg = np.mean(rewards)
+        if curr_avg >= TARGET_MEAN_REWARD:
+            reached_threshold = True
+            iterations_to_threshold = steps[-1]
+            seconds_to_threshold = timestamps[-1] - timestamps[0]
+    else:
+        window = max(1, len(rewards) // 2)
+        for i in range(window, len(rewards)):
+            curr_avg = np.mean(rewards[i - window:i])
+            if curr_avg >= TARGET_MEAN_REWARD:
+                reached_threshold = True
+                iterations_to_threshold = steps[i]
+                seconds_to_threshold = timestamps[i] - timestamps[0]
+                break
 
     row = {
-        "run_id" : run_folder.name,
+        "run_id": run_folder.name,
         "game_type": config.get("game_type"),
         "algorithm": config.get("algorithm"),
         "learning_rate": config.get("learning_rate"),
@@ -74,13 +93,11 @@ def process_run(run_folder: Path):
         "cpu_cores": config.get("cpu_cores"),
         "total_ram_gb": config.get("total_ram_gb"),
         "avg_cpu_utilization": avg_cpu,
-        "avg_gpu_utilization": avg_gpu,
         "avg_ram_usage_mb": avg_ram,
         "peak_ram_usage_mb": peak_ram,
-        "target_mean_reward": target_mean_reward,
-        "iterations_to_target": iterations_to_target,
-        "seconds_to_target": seconds_to_target,
-        "training_success": int(training_success),
+        "reached_threshold": int(reached_threshold),
+        "iterations_to_threshold": iterations_to_threshold,
+        "seconds_to_threshold": seconds_to_threshold
     }
 
     return row

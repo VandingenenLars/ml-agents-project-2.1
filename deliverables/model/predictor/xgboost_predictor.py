@@ -15,10 +15,12 @@ Author:
 Date:
     2025-11-25 - 2026-01-16
 """
+
 import os
 from pathlib import Path
-import pandas as pd
+
 import numpy as np
+import pandas as pd
 from xgboost import XGBRegressor, XGBClassifier
 from sklearn.metrics import mean_absolute_error, mean_squared_error, accuracy_score
 
@@ -30,8 +32,8 @@ DATA_DIR = PROJECT_ROOT / "deliverables" / "data"
 FEATURES_DIR = DATA_DIR / "features"
 PROCESSED_DIR = DATA_DIR / "processed"
 RAW_DIR = DATA_DIR / "raw"
-MODELS_DIR = DATA_DIR / "models"
-PREDICTIONS_DIR = DATA_DIR / "predictions"
+MODELS_DIR = DATA_DIR / "models/xgboost"
+PREDICTIONS_DIR = DATA_DIR / "predictions/xgboost"
 
 os.makedirs(MODELS_DIR, exist_ok=True)
 os.makedirs(PREDICTIONS_DIR, exist_ok=True)
@@ -42,11 +44,13 @@ def load_feature_sets():
     X_test = pd.read_csv(FEATURES_DIR / "X_test.csv")
     y_train = pd.read_csv(FEATURES_DIR / "y_train.csv")
     y_test = pd.read_csv(FEATURES_DIR / "y_test.csv")
+
     run_ids_train = pd.read_csv(FEATURES_DIR / "run_ids_train.csv")
     run_ids_test = pd.read_csv(FEATURES_DIR / "run_ids_test.csv")
-    return X_train, X_test, y_train, y_test
 
-def train_regressor(name, X_train, y_train, X_test, y_test):
+    return X_train, X_test, y_train, y_test, run_ids_train, run_ids_test
+
+def train_ram_regressor(X_train, y_train, X_test, y_test, target_col):
     model = XGBRegressor(
         n_estimators=300,
         learning_rate=0.05,
@@ -54,88 +58,105 @@ def train_regressor(name, X_train, y_train, X_test, y_test):
         subsample=0.9,
         colsample_bytree=0.9,
         objective="reg:squarederror",
-        enable_categorical=True
+        random_state=34
     )
-    model.fit(X_train, y_train)
-    preds = model.predict(X_test)
+    y_train_col = y_train[target_col].copy()
+    y_test_col = y_test[target_col].copy()
 
-    model.save_model(MODELS_DIR / f"{name}.json")
-    pd.DataFrame(preds, columns=[f"pred_{name}"]).to_csv(PREDICTIONS_DIR / f"{name}_predictions.csv", index=False)
+    upper = y_train_col.quantile(0.995)
+    y_train_col = y_train_col.clip(upper=upper)
 
-    return preds
+    y_train_log = np.log1p(y_train_col)
+    model.fit(X_train, y_train_log)
 
-def train_classifier(X_train, X_test, y_train, y_test, weights=(1/3, 1/3, 1/3)):
-    y_train_eff = compute_efficiency(y_train, weights)
-    y_test_eff = compute_efficiency(y_test, weights)
+    preds_log = model.predict(X_test)
+    preds_mb = np.expm1(preds_log)
 
-    threshold = y_train_eff.median()
-    y_train_cls = (y_train_eff < threshold).astype(int)
-    y_test_cls = (y_test_eff < threshold).astype(int)
+    mae = mean_absolute_error(y_test_col, preds_mb)
+    rmse = np.sqrt(mean_squared_error(y_test_col, preds_mb))
+    print(f"{target_col} - MAE: {mae:.2f}, RMSE: {rmse:.2f}")
 
+    model.save_model(MODELS_DIR / f"{target_col}_regressor.json")
+    pd.DataFrame(preds_mb, columns=[f"pred_{target_col}"]).to_csv(
+        PREDICTIONS_DIR / f"{target_col}_predictions.csv", index=False
+    )
+    return preds_mb
+
+def train_performance_regressor(X_train, y_train, X_test, y_test, target_col):
+    # Only successful runs
+    mask_train = y_train["reached_threshold"] == 1
+    mask_test = y_test["reached_threshold"] == 1
+
+    X_train_s = X_train.loc[mask_train]
+    y_train_s = y_train.loc[mask_train, target_col]
+    X_test_s = X_test.loc[mask_test]
+    y_test_s = y_test.loc[mask_test, target_col]
+
+    model = XGBRegressor(
+        n_estimators=300,
+        learning_rate=0.05,
+        max_depth=6,
+        subsample=0.9,
+        colsample_bytree=0.9,
+        random_state=34
+    )
+    model.fit(X_train_s, y_train_s)
+    preds = model.predict(X_test_s)
+
+    mae = mean_absolute_error(y_test_s, preds)
+    rmse = np.sqrt(mean_squared_error(y_test_s, preds))
+    print(f"{target_col} (successful runs) - MAE: {mae:.2f}, RMSE: {rmse:.2f}")
+
+    model.save_model(MODELS_DIR / f"{target_col}_regressor.json")
+    pd.DataFrame(preds, columns=[f"pred_{target_col}"]).to_csv(
+        PREDICTIONS_DIR / f"{target_col}_predictions.csv", index=False
+    )
+    return preds, X_test_s.index
+
+def train_threshold_classifier(X_train, y_train, X_test, y_test):
     clf = XGBClassifier(
         n_estimators=250,
         learning_rate=0.05,
         max_depth=5,
         subsample=0.8,
         colsample_bytree=0.8,
-        enable_categorical=True
+        random_state=34,
     )
-    clf.fit(X_train, y_train_cls)
+    clf.fit(X_train, y_train["reached_threshold"])
     preds = clf.predict(X_test)
+    probs = clf.predict_proba(X_test)[:, 1]
 
-    clf.save_model(MODELS_DIR / "efficiency_classifier.json")
-    pd.DataFrame(preds, columns=["pred_efficiency_class"]).to_csv(PREDICTIONS_DIR / "efficiency_classifier_predictions.csv", index=False)
+    acc = accuracy_score(y_test["reached_threshold"], preds)
+    print(f"Threshold success accuracy: {acc:.3f}")
 
-    return preds
-
-def compute_efficiency(df, weights=(1/3, 1/3, 1/3)):
-    T_norm = (df['training_time_to_target_sec'] - df['training_time_to_target_sec'].min()) / \
-             (df['training_time_to_target_sec'].max() - df['training_time_to_target_sec'].min())
-    I_norm = (df['iterations_to_target'] - df['iterations_to_target'].min()) / \
-             (df['iterations_to_target'].max() - df['iterations_to_target'].min())
-    R_norm = (df['peak_ram_usage_mb'] - df['peak_ram_usage_mb'].min()) / \
-             (df['peak_ram_usage_mb'].max() - df['peak_ram_usage_mb'].min())
-    alpha, beta, gamma = weights
-    return alpha*T_norm + beta*I_norm + gamma*R_norm
+    clf.save_model(MODELS_DIR / "threshold_classifier.json")
+    pd.DataFrame(preds, columns=["pred_reached_threshold"]).to_csv(
+        PREDICTIONS_DIR / "threshold_classifier_predictions.csv", index=False
+    )
+    return preds, probs
 
 
 def main():
-    X_train, X_test, y_train, y_test = load_feature_sets()
+    X_train, X_test, y_train, y_test, run_ids_train, run_ids_test = load_feature_sets()
+    summary = pd.DataFrame({"run_id": run_ids_test["run_id"]})
 
-    run_ids_test = pd.read_csv(FEATURES_DIR / "run_ids_test.csv")
-    summary_df = X_test.copy()
-    summary_df["run_id"] = run_ids_test
+    # RAM regressors
+    for col in ["avg_ram_usage_mb", "peak_ram_usage_mb"]:
+        preds = train_ram_regressor(X_train, y_train, X_test, y_test, col)
+        summary[f"pred_{col}"] = preds
 
-    # Encode categorical columns in XGBoost-friendly format
-    X_train = X_train
-    X_test_encoded = X_test
+    # Threshold classifier
+    threshold_preds, threshold_probs = train_threshold_classifier(X_train, y_train, X_test, y_test)
+    summary["pred_reached_threshold"] = threshold_preds
+    summary["pred_reached_threshold_prob"] = threshold_probs
 
-    targets = [
-        "seconds_to_target",
-        "iterations_to_target",
-        "peak_ram_usage_mb",
-        "avg_ram_usage_mb",
-    ]
+    # Iteration & seconds regressors (only successful runs)
+    for col in ["iterations_to_threshold", "seconds_to_threshold"]:
+        preds, idx = train_performance_regressor(X_train, y_train, X_test, y_test, col)
+        summary.loc[idx, f"pred_{col}"] = preds
 
-    for target in targets:
-        preds = train_regressor(
-            name=f"regressor_{target}",
-            X_train=X_train,
-            y_train=y_train[target],
-            X_test=X_test_encoded,
-            y_test=y_test[target],
-        )
-        summary_df[f"pred_{target}"] = preds
-
-    eff_preds = train_efficiency_classifier(X_train, X_test_encoded, y_train, y_test)
-    summary_df["pred_efficiency_class"] = eff_preds
-
-    # Save summary.csv
-    summary_path = PREDICTIONS_DIR / "summary.csv"
-    summary_df.to_csv(summary_path, index=False)
-
+    summary.to_csv(PREDICTIONS_DIR / "summary.csv", index=False)
     print(f"\nAll models saved to {MODELS_DIR} and predictions + summary saved to {PREDICTIONS_DIR}.")
-
 
 if __name__ == "__main__":
     main()
