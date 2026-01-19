@@ -40,6 +40,14 @@ def encode_categorical(df):
 
 
 def train_regressor(name,X_train, X_test, y_train, y_test):
+    X_train_clean = X_train[y_train.notna()]
+    y_train_clean = y_train[y_train.notna()]
+
+    if len(y_train_clean) == 0:
+        print(f"{name}: No data to train with, skipping.")
+        return [np.nan] * len(X_test)
+
+
     model = RandomForestRegressor(
         n_estimators=300,
         max_depth=15,
@@ -48,7 +56,7 @@ def train_regressor(name,X_train, X_test, y_train, y_test):
         max_features="sqrt",
         random_state=67
     )
-    model.fit(X_train, y_train)
+    model.fit(X_train_clean, y_train_clean)
     preds = model.predict(X_test)
 
     mae = mean_absolute_error(y_test, preds)
@@ -64,18 +72,16 @@ def train_regressor(name,X_train, X_test, y_train, y_test):
 
     return preds
 
-def compute_efficiency(df, weights=(1/3, 1/3, 1/3)):
+def compute_efficiency(df, weights=(1/2, 1/2)):
     T_norm = (df['seconds_to_target'] - df['seconds_to_target'].min()) / \
              (df['seconds_to_target'].max() - df['seconds_to_target'].min())
     I_norm = (df['iterations_to_target'] - df['iterations_to_target'].min()) / \
              (df['iterations_to_target'].max() - df['iterations_to_target'].min())
-    R_norm = (df['peak_ram_usage_mb'] - df['peak_ram_usage_mb'].min()) / \
-             (df['peak_ram_usage_mb'].max() - df['peak_ram_usage_mb'].min())
-    alpha, beta, gamma = weights
-    return alpha*T_norm + beta*I_norm + gamma*R_norm
+    alpha, beta = weights
+    return alpha*T_norm + beta*I_norm
 
 
-def train_efficiency_classifier(X_train, X_test, y_train, y_test, weights=(1/3, 1/3, 1/3)):
+def train_efficiency_classifier(X_train, X_test, y_train, y_test, weights=(1/2, 1/2)):
     y_train_eff = compute_efficiency(y_train, weights)
     y_test_eff = compute_efficiency(y_test, weights)
 
@@ -107,6 +113,7 @@ def train_efficiency_classifier(X_train, X_test, y_train, y_test, weights=(1/3, 
 
 def main():
     X_train, X_test, y_train, y_test = load_feature_sets()
+    print("y_train columns:", y_train.columns.tolist())
 
     run_ids_test = pd.read_csv(FEATURES_DIR / "run_ids_test.csv")
     summary_df = X_test.copy()
@@ -118,9 +125,7 @@ def main():
 
     targets = [
         "seconds_to_target",
-        "iterations_to_target",
-        "peak_ram_usage_mb",
-        "avg_ram_usage_mb",
+        "iterations_to_target"
     ]
 
     for target in targets:
