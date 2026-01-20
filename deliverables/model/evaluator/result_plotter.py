@@ -21,7 +21,7 @@ BASE_DIR = SCRIPT_DIR.parent.parent / "data"
 FEATURES_DIR = BASE_DIR / "features"
 PREDICTIONS_DIR = BASE_DIR / "predictions/xgboost"
 MODELS_DIR = BASE_DIR / "models/xgboost"
-PLOTS_DIR = SCRIPT_DIR / "plots"
+PLOTS_DIR = SCRIPT_DIR / "plots_xgboost"
 PLOTS_DIR.mkdir(exist_ok=True)
 
 
@@ -146,4 +146,4 @@ print("Training Success Accuracy:", accuracy_score(y_true, y_pred))
 
 plot_feature_importance(MODELS_DIR / "threshold_classifier.json", "Training_Success")
 
-print(f"\nAll plots saved to '{PLOTS_DIR.resolve()}' folder.")
+print(f"\nAll plots_rf saved to '{PLOTS_DIR.resolve()}' folder.")

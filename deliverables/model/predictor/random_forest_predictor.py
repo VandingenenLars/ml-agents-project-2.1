@@ -116,10 +116,10 @@ def train_threshold_classifier(X_train, y_train, X_test, y_test):
     acc = accuracy_score(y_test["reached_threshold"], preds)
     print(f"\nThreshold success accuracy: {acc:.4f}")
 
-    model_path = MODELS_DIR / f"threshold_success_classifier_rf.pkl"
+    model_path = MODELS_DIR / f"threshold_success_classifier.pkl"
     joblib.dump(clf,model_path)
 
-    pred_path = PREDICTIONS_DIR / f"threshold_success_rf_predictions.csv"
+    pred_path = PREDICTIONS_DIR / f"threshold_classifier_predictions.csv"
     pd.DataFrame(preds, columns=[f"preds_threshold_success"]).to_csv(pred_path, index=False)
 
     return preds, probs
@@ -131,7 +131,7 @@ def main():
 
     for target in ["avg_ram_usage_mb", "peak_ram_usage_mb"]:
         preds = train_ram_regressor(
-            name= f"regressor_{target}_rf",
+            name= f"regressor_{target}",
             X_train=X_train,
             y_train=y_train,
             X_test=X_test,
@@ -149,7 +149,7 @@ def main():
         summary_df.loc[idx, f"pred_{target}"] = preds
 
     # Save summary.csv
-    summary_path = PREDICTIONS_DIR / "summary_rf.csv"
+    summary_path = PREDICTIONS_DIR / "summary.csv"
     summary_df.to_csv(summary_path, index=False)
 
     print(f"\nAll models saved to {MODELS_DIR} and predictions + summary saved to {PREDICTIONS_DIR}.")
