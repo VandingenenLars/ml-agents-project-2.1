@@ -14,7 +14,7 @@ DATA_DIR = PROJECT_ROOT / "deliverables" / "data"
 FEATURES_DIR = DATA_DIR / "features"
 PROCESSED_DIR = DATA_DIR / "processed"
 RAW_DIR = DATA_DIR / "raw"
-MODELS_DIR = DATA_DIR / "random_forest" / "models"
+MODELS_DIR = DATA_DIR / "models" / "random_forest"
 PREDICTIONS_DIR = DATA_DIR / "predictions/random_forest"
 
 os.makedirs(MODELS_DIR, exist_ok=True)
