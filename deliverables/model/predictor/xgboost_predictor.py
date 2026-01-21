@@ -52,9 +52,9 @@ def load_feature_sets():
 
 def train_ram_regressor(X_train, y_train, X_test, y_test, target_col):
     model = XGBRegressor(
-        n_estimators=300,
+        n_estimators=500,
         learning_rate=0.05,
-        max_depth=6,
+        max_depth=8,
         subsample=0.9,
         colsample_bytree=0.9,
         objective="reg:squarederror",

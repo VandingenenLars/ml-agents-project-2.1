@@ -1,0 +1,47 @@
+{
+    "name": "root",
+    "metadata": {
+        "timer_format_version": "0.1.0",
+        "start_time_seconds": "1769033553",
+        "python_version": "3.10.12 | packaged by Anaconda, Inc. | (main, Jul  5 2023, 19:01:18) [MSC v.1916 64 bit (AMD64)]",
+        "command_line_arguments": "C:\\Users\\acon\\miniconda3\\envs\\mlagents\\Scripts\\mlagents-learn Z:\\Code\\Uni\\Year 2\\ml-agents-project-2.1\\dummy_mlagents_config.yaml --run-id=run_1769033547 --base-port=6006 --train --torch-device=cpu --env=builds/3dball.exe --force --no-graphics",
+        "mlagents_version": "1.1.0.dev0",
+        "mlagents_envs_version": "1.1.0.dev0",
+        "communication_protocol_version": "1.5.0",
+        "pytorch_version": "2.9.0+cpu",
+        "numpy_version": "1.23.5",
+        "end_time_seconds": "1769033568"
+    },
+    "total": 14.638704999997572,
+    "count": 1,
+    "self": 0.012849499998992542,
+    "children": {
+        "run_training.setup": {
+            "total": 0.22528969999984838,
+            "count": 1,
+            "self": 0.22528969999984838
+        },
+        "TrainerController.start_learning": {
+            "total": 14.40056579999873,
+            "count": 1,
+            "self": 0.0006494999943242874,
+            "children": {
+                "TrainerController._reset_env": {
+                    "total": 14.399896900002204,
+                    "count": 1,
+                    "self": 14.399896900002204
+                },
+                "trainer_threads": {
+                    "total": 3.1000017770566046e-06,
+                    "count": 1,
+                    "self": 3.1000017770566046e-06
+                },
+                "TrainerController._save_models": {
+                    "total": 1.630000042496249e-05,
+                    "count": 1,
+                    "self": 1.630000042496249e-05
+                }
+            }
+        }
+    }
+}

@@ -13,7 +13,7 @@ from sklearn.metrics import (
     accuracy_score
 )
 
-sns.set(style="whitegrid")
+sns.set_theme(style="whitegrid")
 plt.rcParams["figure.figsize"] = (8, 6)
 
 SCRIPT_DIR = Path(__file__).resolve().parent
@@ -100,6 +100,47 @@ def plot_probability_histogram(y_probs, col_name):
     plt.savefig(PLOTS_DIR / f"{col_name}_prob_hist.png")
     plt.close()
 
+def plot_seconds_to_threshold(y_true, y_pred):
+    col_name = "seconds_to_threshold"
+
+    plt.figure()
+    sns.scatterplot(x=y_true, y=y_pred, alpha=0.6)
+    plt.plot([y_true.min(), y_true.max()], [y_true.min(), y_true.max()], 'r--', label="Perfect")
+    m, b = np.polyfit(y_true, y_pred, 1)
+    plt.plot(y_true, m * y_true + b, 'g-', label=f"Fit: y={m:.2f}x+{b:.1f}")
+    plt.xlabel("Actual Seconds")
+    plt.ylabel("Predicted Seconds")
+    plt.title(f"{col_name} - Predicted vs Actual")
+    plt.legend()
+    plt.tight_layout()
+    plt.savefig(PLOTS_DIR / f"{col_name}_scatter.png")
+    plt.close()
+
+    residuals = y_pred - y_true
+    plt.figure()
+    sns.scatterplot(x=y_true, y=residuals, alpha=0.6)
+    plt.axhline(0, color='r', linestyle='--')
+    plt.xlabel("Actual Seconds")
+    plt.ylabel("Residuals")
+    plt.title(f"{col_name} - Residuals")
+    plt.tight_layout()
+    plt.savefig(PLOTS_DIR / f"{col_name}_residuals.png")
+    plt.close()
+
+    plt.figure()
+    sns.histplot(residuals, bins=30, kde=True)
+    plt.xlabel("Residual")
+    plt.ylabel("Count")
+    plt.title(f"{col_name} - Residual Distribution")
+    plt.tight_layout()
+    plt.savefig(PLOTS_DIR / f"{col_name}_residual_hist.png")
+    plt.close()
+
+    mae = mean_absolute_error(y_true, y_pred)
+    rmse = np.sqrt(mean_squared_error(y_true, y_pred))
+    print(f"{col_name} - MAE: {mae:.2f}, RMSE: {rmse:.2f}")
+
+
 
 def plot_feature_importance(model_path, col_name, model_type=None):
     if model_type is None:
@@ -119,6 +160,7 @@ def plot_feature_importance(model_path, col_name, model_type=None):
     plt.tight_layout()
     plt.savefig(PLOTS_DIR / f"{col_name}_feature_importance.png")
     plt.close()
+
 
 y_test = pd.read_csv(FEATURES_DIR / "y_test.csv")
 summary = pd.read_csv(PREDICTIONS_DIR / "summary.csv")
@@ -145,5 +187,11 @@ plot_probability_histogram(y_probs, "Training_Success")
 print("Training Success Accuracy:", accuracy_score(y_true, y_pred))
 
 plot_feature_importance(MODELS_DIR / "threshold_classifier.json", "Training_Success")
+
+mask = y_test["reached_threshold"] == 1
+y_true = y_test.loc[mask, "seconds_to_threshold"]
+y_pred = summary.loc[mask, "pred_seconds_to_threshold"]
+
+plot_seconds_to_threshold(y_true, y_pred)
 
 print(f"\nAll plots_rf saved to '{PLOTS_DIR.resolve()}' folder.")

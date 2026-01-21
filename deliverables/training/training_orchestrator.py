@@ -114,6 +114,12 @@ if __name__ == "__main__":
         help="Target reward threshold"
     )
 
+    parser.add_argument(
+        "--behavior_name",
+        type=str,
+        default="3DBall",
+        help="ML-Agents behavior name (must match Unity Behavior Parameters)"
+    )
 
     args = parser.parse_args()
     orch = training_orchestrator(
