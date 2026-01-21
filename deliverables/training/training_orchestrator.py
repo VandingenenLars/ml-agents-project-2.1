@@ -1,6 +1,23 @@
+"""
+data_processor.py
+
+Description:
+    This module orchestrates a compete Unity ML-Agents training run while automatically collecting system-level and training-level metrics.
+Usage:
+    Run this file by executing the following command:
+    python training_orchestrator.py --unity-app {path_to_exe}
+
+Author:
+    Lars Vandingenen
+Date:
+     2025-11-10
+"""
+import argparse
 import os
 import time
 import json
+
+from pkg_resources import require
 
 from deliverables.training.data_collector import data_collector
 from deliverables.training.configs.agents.ppo.ppo_config import ppo_config
@@ -56,6 +73,7 @@ class training_orchestrator:
             run_path=run_path
         )
 
+
         print(f"Starting training with run ID = {run_id}")
         print(f"Output directory: {run_path}")
 
@@ -75,9 +93,19 @@ class training_orchestrator:
 
 
 if __name__ == "__main__":
-    UNITY_APP = "/Users/larsvandingenen/MLagents/ml-agents-project-2.1/Builds/Mygame.app"
+    parser = argparse.ArgumentParser(
+        description= "Run Unity ML-Agents training with data collection"
+    )
+    parser.add_argument(
+        "--unity-app",
+        type=str,
+        required=True,
+        help="Path to the built Unity environment executable"
+    )
+    args = parser.parse_args()
+
     orch = training_orchestrator(
-        unity_env_path=UNITY_APP,
+        unity_env_path=args.unity_app,
         behavior_name="3DBall",
         target_reward=1.0,
         system_metrics_interval=2.0,
