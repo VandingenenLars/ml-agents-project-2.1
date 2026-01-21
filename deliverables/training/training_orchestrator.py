@@ -102,8 +102,20 @@ if __name__ == "__main__":
         required=True,
         help="Path to the built Unity environment executable"
     )
-    args = parser.parse_args()
+    parser.add_argument(
+        "--no-graphics",
+        action="store_true",
+        help="Run unity environment in no-graphics mode"
+    )
+    parser.add_argument(
+        "--target-reward",
+        type=float,
+        default=1.0,
+        help="Target reward threshold"
+    )
 
+
+    args = parser.parse_args()
     orch = training_orchestrator(
         unity_env_path=args.unity_app,
         behavior_name="3DBall",
